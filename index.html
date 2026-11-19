@@ -992,8 +992,8 @@ function printMonth(){
 function featuresBlock(){
   var R=S.remind||{on:false,hour:20},hrs='',i;for(i=0;i<24;i++)hrs+='<option value="'+i+'"'+(i===R.hour?' selected':'')+'>'+pad(i)+':00</option>';
   var row='display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line);font-size:14px',H3='<h3 style="font-size:16px;margin:18px 0 6px">';
-  var o=H3+t('Avisos')+'</h3>'
-   +'<p class="note">'+t('Te recordamos anotar tus movimientos a las 8:00, 12:00, 16:00 y 20:00 (hora de Perú).')+' '+t('Los avisos de Plata Clara se activan o desactivan desde los ajustes de notificaciones de tu teléfono.')+'</p>'
+  var o=H3+t('Notificaciones')+'</h3>'
+   +'<p class="note">'+t('Te recordamos anotar tus movimientos a las 8:00, 12:00, 16:00 y 20:00 (hora de Perú).')+' '+t('Las notificaciones de Plata Clara se activan o desactivan desde los ajustes de tu teléfono.')+'</p>'
    +H3+t('Movimientos que se repiten')+'</h3>';
   var rs=S.recur||[];
   o+=rs.length?rs.map(function(r){return '<div style="'+row+'"><span>'+esc(r.desc||cname(r.cat))+' · '+money(r.amount,r.cc)+' · '+t('día {d} de cada mes',{d:r.day})+'</span><button class="btn sm alt" data-a="rec-del" data-id="'+esc(r.id)+'">'+t('Quitar')+'</button></div>';}).join(''):'<p class="note">'+t('Aún no hay movimientos que se repiten.')+'</p>';
