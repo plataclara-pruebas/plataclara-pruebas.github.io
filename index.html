@@ -404,6 +404,7 @@ function numLocFor(cc){return curOf(cc).loc||EURLOC[LANG]||'es-ES';}
 function userTags(){var l=navigator.languages&&navigator.languages.length?navigator.languages:[navigator.language||'es'];return Array.prototype.map.call(l,String);}
 function detectLang(){var l=userTags();for(var i=0;i<l.length;i++){var p=l[i].toLowerCase().split('-')[0];if(validLang(p))return p;}return 'en';}
 function detectCC(lang){
+  try{if(Intl.DateTimeFormat().resolvedOptions().timeZone==='America/Lima')return 'PEN';}catch(e){}/* beta Peru: hora de Peru = soles */
   var l=userTags();
   for(var i=0;i<l.length;i++){var rg=(l[i].split('-')[1]||'').toUpperCase();if(!rg)continue;for(var j=0;j<CUR.length;j++)if(CUR[j].r.indexOf(rg)>=0)return CUR[j].c;}
   return {es:'PEN',en:'USD',pt:'BRL',fr:'EUR',de:'EUR',it:'EUR'}[lang]||'USD';
