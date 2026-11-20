@@ -174,50 +174,45 @@
   }
 
 
-  /* ---------- permiso de notificaciones: se vuelve a pedir en cada apertura hasta que se active ---------- */
-  var ASK_KEY = 'pc-avisos-preguntado';          // historial en este dispositivo (ya no bloquea volver a pedir)
-  var SES_KEY = 'pc-notif-pedido-sesion';        // una vez por apertura de la app
+  /* ---------- permiso de notificaciones: UNA sola vez por dispositivo, al terminar el tutorial ---------- */
+  // Se marca en este dispositivo (localStorage) ANTES de preguntar: acepte, rechace, bloquee o cierre, no se vuelve a pedir.
+  var ASK_KEY = 'pc-avisos-preguntado';
+  function pushAsked() { try { return !!localStorage.getItem(ASK_KEY); } catch (e) { return true; } }
   function markPushAsked(v) { try { localStorage.setItem(ASK_KEY, v + '|' + new Date().toISOString()); } catch (e) {} }
-  function askedThisSession() { try { return !!sessionStorage.getItem(SES_KEY); } catch (e) { return false; } }
-  function markSession() { try { sessionStorage.setItem(SES_KEY, '1'); } catch (e) {} }
   function canAskPush() { return !!(VAPID && user && pushSupported() && !(isIOS && !standalone)); }
   function requestPushNow() {   // llamar solo desde un toque del usuario (iOS y Chrome lo exigen)
     return enablePush0().then(function () { markPushAsked('aceptado'); return true; }, function () { markPushAsked('no-aceptado'); return false; });
   }
-  // Fin del tutorial (toque del usuario): pide el permiso del sistema si aun no esta decidido.
-  function askPushOnce() {
-    if (!canAskPush()) return Promise.resolve(false);
-    markSession();
-    if (Notification.permission === 'granted') return requestPushNow();
-    if (Notification.permission === 'denied') { setTimeout(function () { offerPush(true); }, 400); return Promise.resolve(false); }
+  function askPushOnce() {      // fin del tutorial
+    if (!canAskPush() || pushAsked()) return Promise.resolve(false);
+    if (Notification.permission === 'granted') return requestPushNow();              // ya activadas en el telefono
+    if (Notification.permission === 'denied') { markPushAsked('bloqueado'); return Promise.resolve(false); }  // no se insiste
+    markPushAsked('preguntado');
     return requestPushNow();
   }
   window.__pcPushOnce = function () { return askPushOnce(); };
-  // En cada apertura (despues del tutorial): si no estan activadas, se vuelve a ofrecer.
-  function offerPush(force) {
-    if (ov || document.getElementById('coach') || !canAskPush()) return;
-    if (!force && askedThisSession()) return;
+  // Cuentas que terminaron el tutorial antes de este cambio: una sola hoja, una sola vez por dispositivo.
+  function offerPushOnce() {
+    if (ov || document.getElementById('coach') || !canAskPush() || pushAsked()) return;
     var S0 = window.__pc && window.__pc.get && window.__pc.get();
     if (!S0 || !S0.tour) return;
-    var perm = Notification.permission;
-    if (perm === 'granted') { syncPush(); return; }
-    markSession();
-    var bloq = perm === 'denied';
-    var pasos = /android/i.test(navigator.userAgent)
-      ? 'En tu teléfono: Ajustes → Apps → ' + (standalone ? 'Plata Clara' : 'Chrome') + ' → Notificaciones → Activar. Si usas Chrome, también: menú ⋮ → Configuración → Configuración de sitios → Notificaciones → Permitir para este sitio.'
-      : 'Abre los ajustes de notificaciones de tu teléfono o navegador y permite las de Plata Clara.';
-    show('<h2>Activa las notificaciones</h2><p>Te recordamos anotar tus movimientos a las 8:00, 12:00, 16:00 y 20:00 (hora de Perú).</p>' +
-      (bloq ? '<div class="pc-m e" style="min-height:0">Las notificaciones están bloqueadas en este dispositivo.</div><p style="font-size:14px">' + pasos + '</p>' +
-              '<button class="pc-b" data-ok>Entendido</button>'
-            : '<button class="pc-b" data-ya>Activar notificaciones</button><button class="pc-b alt" data-no>Ahora no</button>'), function (o) {
-        var ya = o.querySelector('[data-ya]'), no = o.querySelector('[data-no]'), okb = o.querySelector('[data-ok]');
-        if (ya) ya.onclick = function () { close(); requestPushNow().then(function (ok) { if (!ok && Notification.permission === 'denied') offerPush(true); }); };
-        if (no) no.onclick = function () { markPushAsked('ahora-no'); close(); };
-        if (okb) okb.onclick = function () { close(); };
+    if (Notification.permission !== 'default') { askPushOnce(); return; }
+    markPushAsked('ofrecido');
+    show('<h2>Notificaciones de Plata Clara</h2><p>Te recordamos anotar tus movimientos a las 8:00, 12:00, 16:00 y 20:00 (hora de Perú).</p>' +
+      '<div class="pc-m" style="min-height:0">Luego podrás activarlas o desactivarlas desde los ajustes de tu teléfono.</div>' +
+      '<button class="pc-b" data-ya>Permitir notificaciones</button><button class="pc-b alt" data-no>Ahora no</button>', function (o) {
+        o.querySelector('[data-ya]').onclick = function () { close(); requestPushNow(); };
+        o.querySelector('[data-no]').onclick = function () { markPushAsked('ahora-no'); close(); };
       });
   }
-  var offerPushOnce = function () { offerPush(false); };   // nombre usado al iniciar sesion
-  document.addEventListener('visibilitychange', function () { if (!document.hidden && user) setTimeout(function () { offerPush(false); }, 1500); });
+  // Pasos para activarlas a mano (la web no puede abrir los ajustes del telefono directamente).
+  function pasosAjustes() {
+    if (/android/i.test(navigator.userAgent)) return standalone
+      ? 'Para activarlas: Ajustes del teléfono → Apps → Plata Clara → Notificaciones → Activar.'
+      : 'Para activarlas: en Chrome, toca ⋮ → Configuración → Configuración de sitios → Notificaciones → permite este sitio. Revisa también Ajustes del teléfono → Apps → Chrome → Notificaciones.';
+    if (isIOS) return 'Para activarlas: Ajustes del iPhone → Notificaciones → Plata Clara → Permitir notificaciones.';
+    return 'Para activarlas: permite las notificaciones de este sitio en la configuración de tu navegador.';
+  }
 
   /* ---------- aviso pequeño con interruptor (Resumen y Deudas) ---------- */
   var nt = { on: false, busy: false, err: '' };
@@ -537,7 +532,7 @@
     if (!VAPID) return '';
     var est = !pushSupported() || (isIOS && !standalone) ? (isIOS && !standalone ? 'En iPhone, agrega la app a tu pantalla de inicio y ábrela desde ese ícono para recibir notificaciones.' : 'Este navegador no permite notificaciones.')
       : Notification.permission === 'granted' && sub ? 'Notificaciones activadas en este dispositivo.'
-      : Notification.permission === 'denied' ? 'Notificaciones desactivadas en este dispositivo.' : 'Notificaciones sin activar en este dispositivo.';
+      : Notification.permission === 'denied' ? 'Notificaciones desactivadas en este dispositivo. ' + pasosAjustes() : 'Notificaciones sin activar en este dispositivo. ' + pasosAjustes();
     return '<h3 style="font-size:16px;margin:18px 0 4px">Notificaciones</h3><div class="pc-m">' + est + '</div>' +
       '<p style="margin:6px 0 0;font-size:14px">Te recordamos anotar tus movimientos a las 8:00, 12:00, 16:00 y 20:00 (hora de Perú). Las notificaciones se activan o desactivan desde los ajustes de tu teléfono.</p>';
     var h = '<h3 style="font-size:16px;margin:18px 0 4px">Avisos de cuotas</h3>';
