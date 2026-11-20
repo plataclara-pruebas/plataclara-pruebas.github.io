@@ -43,6 +43,9 @@ self.addEventListener('push', function (e) {
   var d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) { list.forEach(function (c) { c.postMessage({ type: 'pc-push' }); }); }));
+  // SOLO SITIO DE PRUEBAS: constancia de recepcion para diagnosticar entregas (no envia contenido del aviso).
+  var marca = function (paso) { return fetch('https://sqfobtlxvddmijafttog.supabase.co/functions/v1/push-receptor-prueba?d=telefono-' + paso + '-' + encodeURIComponent(d.tag || 'sin-tag'), { method: 'POST', body: '' }).catch(function () {}); };
+  e.waitUntil(marca('recibido'));
   e.waitUntil(self.registration.showNotification(d.title || 'Plata Clara', {
     body: d.body || '',
     icon: 'icon-192.png',
@@ -53,7 +56,7 @@ self.addEventListener('push', function (e) {
     tag: d.tag || 'plata-clara',
     renotify: true,
     data: { url: d.url || './#deudas' }
-  }));
+  }).then(function () { return marca('mostrado'); }, function (err) { return marca('error-' + (err && err.name)); }));
 });
 
 self.addEventListener('notificationclick', function (e) {
