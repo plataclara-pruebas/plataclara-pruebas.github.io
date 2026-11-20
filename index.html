@@ -222,6 +222,8 @@ input[aria-invalid="true"]:focus-visible{outline-color:var(--exp)}
 .seg div{position:relative}
 
 .overlay{position:fixed;inset:0;z-index:40;background:rgba(8,14,11,.55);display:flex;align-items:flex-end;justify-content:center}
+/* Android puede reducir solo el área visible al abrir el teclado. */
+.overlay{top:var(--pc-vv-top,0px);bottom:auto;height:var(--pc-vv-height,100%)}
 @media (min-width:700px){.overlay{align-items:center}}
 .sheet{background:var(--surface);width:100%;max-width:520px;max-height:92%;overflow:auto;border-radius:18px 18px 0 0;
   padding:18px max(18px,env(safe-area-inset-right,0px)) calc(18px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px))}
@@ -1777,14 +1779,37 @@ document.addEventListener('change',function(e){
   if(tg.name==='type'&&ui.sheet&&ui.sheet.kind==='move'){document.getElementById('dyn').innerHTML=moveFields(tg.value,ui.sheet.id?{id:ui.sheet.id}:{});return;}
   if(tg.dataset.budget){var v=num(tg.value);if(v>0)S.budgets[tg.dataset.budget]=v;else delete S.budgets[tg.dataset.budget];S.seedBudgets=false;save();render();return;}
 });
-/* Monto vacío o cero: un solo mensaje junto al campo, aria-invalid y foco sin desplazar la vista. */
+/* Se desplaza solo el panel y solo si el campo o su error quedan fuera del área visible. */
+function keepSheetFieldVisible(a){
+  if(!a||!a.closest)return;
+  var panel=a.closest('.sheet');if(!panel)return;
+  requestAnimationFrame(function(){
+    if(!a.isConnected||!panel.isConnected)return;
+    var v=window.visualViewport,p=panel.getBoundingClientRect(),r=a.getBoundingClientRect();
+    var top=r.top,bottom=r.bottom,described=(a.getAttribute('aria-describedby')||'').split(/\s+/);
+    described.forEach(function(id){var e=document.getElementById(id);if(e&&e.textContent){var q=e.getBoundingClientRect();top=Math.min(top,q.top);bottom=Math.max(bottom,q.bottom);}});
+    var visibleTop=Math.max(p.top,v?v.offsetTop:0)+12,visibleBottom=Math.min(p.bottom,v?v.offsetTop+v.height:innerHeight)-12;
+    if(bottom>visibleBottom)panel.scrollTop+=bottom-visibleBottom;
+    else if(top<visibleTop)panel.scrollTop-=visibleTop-top;
+  });
+}
+function fitSheetViewport(){
+  var v=window.visualViewport;if(!v)return;
+  document.documentElement.style.setProperty('--pc-vv-height',v.height+'px');
+  document.documentElement.style.setProperty('--pc-vv-top',v.offsetTop+'px');
+  keepSheetFieldVisible(document.activeElement);
+}
+if(window.visualViewport){window.visualViewport.addEventListener('resize',fitSheetViewport);window.visualViewport.addEventListener('scroll',fitSheetViewport);fitSheetViewport();}
+document.addEventListener('focusin',function(e){if(e.target.matches('input,select,textarea'))keepSheetFieldVisible(e.target);});
+/* Monto vacío o cero: error junto al campo, visible también sobre el teclado. */
 function amtErr(f,on){
   var a=f&&f.querySelector('#f-amt'),e=f&&f.querySelector('#f-amt-err');if(!a||!e)return;
   if(!on){a.removeAttribute('aria-invalid');e.removeAttribute('role');e.textContent='';return;}
   var msg=t('Escribe un monto mayor que cero');
   a.setAttribute('aria-invalid','true');
-  if(document.activeElement===a){e.textContent='';e.setAttribute('role','alert');setTimeout(function(){e.textContent=msg;},30);}  /* ya estaba en el campo (Enter): se anuncia */
+  if(document.activeElement===a){e.textContent='';e.setAttribute('role','alert');setTimeout(function(){e.textContent=msg;keepSheetFieldVisible(a);},30);}  /* ya estaba en el campo (Enter): se anuncia */
   else{e.removeAttribute('role');e.textContent=msg;try{a.focus({preventScroll:true});}catch(x){a.focus();}}             /* al enfocar se leen nombre, "no válido" y el mensaje */
+  keepSheetFieldVisible(a);
 }
 document.addEventListener('input',function(e){var a=e.target;if(a&&a.id==='f-amt'&&a.getAttribute('aria-invalid')==='true'&&num(a.value)>0)amtErr(a.form,false);});
 document.addEventListener('submit',function(e){
@@ -1923,8 +1948,9 @@ function momErr(f,on){
   var a=f&&f.querySelector('#mom-amt'),e=f&&f.querySelector('#mom-amt-err');if(!a||!e)return;
   if(!on){a.removeAttribute('aria-invalid');e.removeAttribute('role');e.textContent='';return;}
   var msg=t('Escribe un monto mayor que cero');a.setAttribute('aria-invalid','true');
-  if(document.activeElement===a){e.textContent='';e.setAttribute('role','alert');setTimeout(function(){e.textContent=msg;},30);}
+  if(document.activeElement===a){e.textContent='';e.setAttribute('role','alert');setTimeout(function(){e.textContent=msg;keepSheetFieldVisible(a);},30);}
   else{e.removeAttribute('role');e.textContent=msg;try{a.focus({preventScroll:true});}catch(x){a.focus();}}
+  keepSheetFieldVisible(a);
 }
 document.addEventListener('change',momStale);
 /* Aviso junto a "¿De dónde sale?" cuando el ahorro general no alcanza. Se quita al cambiar el origen o el monto. */
