@@ -1785,7 +1785,7 @@ function keepSheetFieldVisible(a){
   var panel=a.closest('.sheet');if(!panel)return;
   requestAnimationFrame(function(){
     if(!a.isConnected||!panel.isConnected)return;
-    var v=window.visualViewport,p=panel.getBoundingClientRect(),r=a.getBoundingClientRect();
+    var v=window.visualViewport,p=panel.getBoundingClientRect(),field=a.closest('.f'),r=(field||a).getBoundingClientRect();
     var top=r.top,bottom=r.bottom,described=(a.getAttribute('aria-describedby')||'').split(/\s+/);
     described.forEach(function(id){var e=document.getElementById(id);if(e&&e.textContent){var q=e.getBoundingClientRect();top=Math.min(top,q.top);bottom=Math.max(bottom,q.bottom);}});
     var visibleTop=Math.max(p.top,v?v.offsetTop:0)+12,visibleBottom=Math.min(p.bottom,v?v.offsetTop+v.height:innerHeight)-12;
