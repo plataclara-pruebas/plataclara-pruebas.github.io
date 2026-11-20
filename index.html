@@ -1978,13 +1978,37 @@ render();
 <script src="sync-model.js"></script>
 <script src="cloud.js"></script>
 <script>
-/* Actualización automática: registra el service worker y recarga cuando hay versión nueva */
+/* Actualización: registra el service worker. Si llega una versión nueva:
+   - recién abierta y sin tocar nada (primeros 8 s) → recarga sola;
+   - si la persona ya está usando la app → barra "Hay una versión nueva · Actualizar" (no se pierde lo que está escribiendo). */
 (function(){
   if(!('serviceWorker' in navigator))return;
-  var hadController=!!navigator.serviceWorker.controller,reloaded=false;
+  var en={"Hay una versión nueva de Plata Clara.":"A new version of Plata Clara is available.","Actualizar":"Update","Cerrar aviso":"Close notice"};
+  var tx=function(s){return (typeof LANG!=='undefined'&&LANG==='en'&&en[s])||(typeof t==='function'?t(s):s);};
+  var hadController=!!navigator.serviceWorker.controller,reloaded=false,used=false,bar=null;
+  var marcar=function(){used=true;};
+  ['pointerdown','keydown','input'].forEach(function(ev){document.addEventListener(ev,marcar,{capture:true,passive:true});});
+  function recargar(){if(reloaded)return;reloaded=true;location.reload();}
+  function mostrarBarra(){
+    if(bar)return;
+    var st=document.createElement('style');
+    st.textContent='.pc-upd{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:9999;display:flex;align-items:center;gap:8px;padding:8px 8px 8px 16px;border-radius:14px;background:var(--accent,#0E6B50);color:var(--accent-ink,#fff);box-shadow:0 6px 24px rgba(0,0,0,.25);font:600 15px/1.35 var(--f-body,system-ui,sans-serif);max-width:520px;margin:0 auto}'
+      +'.pc-upd span{flex:1;min-width:0}'
+      +'.pc-upd button{min-height:48px;border:0;border-radius:10px;font:inherit;cursor:pointer}'
+      +'.pc-upd .pc-upd-si{padding:0 16px;background:var(--accent-ink,#fff);color:var(--accent,#0E6B50);font-weight:700}'
+      +'.pc-upd .pc-upd-no{min-width:48px;background:transparent;color:inherit;font-size:22px;line-height:1}';
+    document.head.appendChild(st);
+    bar=document.createElement('div');bar.className='pc-upd';bar.setAttribute('role','status');bar.setAttribute('aria-live','polite');
+    var msg=document.createElement('span');msg.textContent=tx('Hay una versión nueva de Plata Clara.');
+    var si=document.createElement('button');si.type='button';si.className='pc-upd-si';si.textContent=tx('Actualizar');si.onclick=recargar;
+    var no=document.createElement('button');no.type='button';no.className='pc-upd-no';no.textContent='×';no.setAttribute('aria-label',tx('Cerrar aviso'));
+    no.onclick=function(){bar.remove();bar=null;};
+    bar.appendChild(msg);bar.appendChild(si);bar.appendChild(no);document.body.appendChild(bar);
+  }
+  window.__pcMostrarActualizacion=mostrarBarra;   /* para pruebas */
   navigator.serviceWorker.addEventListener('controllerchange',function(){
     if(!hadController){hadController=true;return;}
-    if(reloaded)return;reloaded=true;location.reload();
+    if(!used&&performance.now()<8000)recargar();else mostrarBarra();
   });
   navigator.serviceWorker.register('sw.js').then(function(reg){
     reg.update();
