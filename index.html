@@ -93,6 +93,7 @@ h1,h2,h3{font-family:var(--f-display);margin:0;letter-spacing:-.01em;text-wrap:b
 .two{grid-template-columns:minmax(0,1fr)}
 @media (min-width:860px){.two{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.09em;color:var(--muted)}
 .card h2{font-size:17px;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline;gap:8px}
 .card h2 small{font:500 13px var(--f-body);color:var(--muted)}
 .stat{display:flex;flex-direction:column;gap:2px}
@@ -217,6 +218,25 @@ label.f>*:not(span){color:var(--ink);font-weight:400}
 .sheet h2{font-size:20px;margin-bottom:14px}
 .sheet .foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .sheet .foot .grow{flex:1}
+/* Respuesta breve, sin retrasar guardado, foco ni cierre. */
+.btn,.icon-btn,.row{transition:background-color 150ms ease,box-shadow 150ms ease}
+.btn:active,.icon-btn:active,.row:active{box-shadow:inset 0 0 0 2px var(--accent)}
+.overlay.pc-enter{animation:pc-fade-in 180ms ease-out}
+.pc-enter>.sheet{animation:pc-sheet-in 180ms ease-out}
+.overlay.pc-leave{pointer-events:none;animation:pc-fade-out 150ms ease-in forwards}
+.pc-leave>.sheet{animation:pc-sheet-out 150ms ease-in forwards}
+.pc-saved{animation:pc-saved 250ms ease-out}
+#mom-res{animation:pc-fade-in 180ms ease-out}
+@keyframes pc-fade-in{from{opacity:0}to{opacity:1}}
+@keyframes pc-fade-out{to{opacity:0}}
+@keyframes pc-sheet-in{from{transform:translateY(12px)}to{transform:translateY(0)}}
+@keyframes pc-sheet-out{to{transform:translateY(8px)}}
+@keyframes pc-saved{from{background-color:var(--surface2);box-shadow:inset 3px 0 var(--accent)}to{background-color:var(--surface);box-shadow:inset 0 0 transparent}}
+@media(max-width:859px){.seg label{min-height:48px;display:flex;align-items:center;justify-content:center}.toast .undo{min-height:44px;min-width:44px}}
+@media(prefers-reduced-motion:reduce){
+  .btn,.icon-btn,.row,#coach .spot{transition:none}
+  .overlay.pc-enter,.pc-enter>.sheet,.overlay.pc-leave,.pc-leave>.sheet,.pc-saved,#mom-res{animation:none}
+}
 .note{font-size:13px;color:var(--muted);margin:10px 0 0}
 .help{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:14px}
 .help summary{cursor:pointer;padding:10px 14px;font-weight:600;font-size:14px;list-style:none;display:flex;align-items:center;gap:8px}
@@ -652,6 +672,22 @@ function spentByCat(k){var o={};S.moves.forEach(function(m){if(m.type==='Gasto'&
 function goalSaved(g){return g.initial+S.moves.reduce(function(a,m){return a+(m.goalId===g.id&&mc(m)===mc(g)?m.amount:0);},0);}
 function savOut(){return S.moves.reduce(function(a,m){return a+(m.fromSav?toBase(m):0);},0);}
 function debtPaid(d){return d.initial+S.moves.reduce(function(a,m){return a+(m.debtId===d.id&&mc(m)===mc(d)?m.amount:0);},0);}
+/* Momento Claro no mueve dinero: solo hace visible el efecto de una compra antes de anotarla. */
+function activeGoals(){return S.goals.filter(function(g){return mc(g)===S.cc&&g.kind!=='ext'&&g.target>goalSaved(g);});}
+function monthsLeft(g){var d=daysUntil(g.date);return d!=null&&d>=0?Math.max(1,Math.ceil((d+1)/30.44)):null;}
+function momentoResult(goal,amount){
+  var saved=goalSaved(goal),left=Math.max(0,goal.target-saved),share=left?amount/left:0,months=monthsLeft(goal);
+  var out={left:left,share:share,months:months};
+  if(months){out.before=left/months;out.after=(left+amount)/months;}
+  return out;
+}
+function ritmoHTML(){
+  var gs=activeGoals().sort(function(a,b){var da=daysUntil(a.date),db=daysUntil(b.date);da=da!=null&&da>=0?da:Infinity;db=db!=null&&db>=0?db:Infinity;return da-db;});
+  if(!gs.length)return '';
+  var g=gs[0],r=momentoResult(g,0),need=r.before;
+  var copy=r.months?'Para llegar a '+esc(dateLong(g.date))+', necesitas apartar <b class="num">'+money(need)+'</b> al mes.':g.date?'La fecha de esta meta ya pasó. Ponle una nueva para convertirla en un aporte mensual.':'Ponle una fecha a esta meta para convertirla en un aporte mensual.';
+  return '<section class="card" style="margin-top:12px;border-left:4px solid var(--sav)"><div class="toolbar" style="align-items:start"><div><p class="eyebrow" style="margin:0 0 4px">RITMO DE AHORRO</p><h2 style="margin:0">'+t('Tu próxima decisión protege “{name}”',{name:esc(g.name)})+'</h2></div><button class="btn alt sm" data-a="momento" data-id="'+g.id+'">Momento Claro</button></div><p class="note" style="margin:10px 0 0">'+copy+' Te faltan <b class="num">'+money(r.left)+'</b>.</p></section>';
+}
 function niceMax(v){if(v<=0)return 100;var e=Math.pow(10,Math.floor(Math.log10(v))),f=v/e;var n=f<=1?1:f<=2?2:f<=4?4:f<=8?8:10;return n*e;}
 
 /* ================= atajos, avisos de deudas y respaldo ================= */
@@ -835,6 +871,7 @@ function vResumen(){
     +statTile(t('Ingresos'),money(inc),t('Lo que entró este mes'),'c-inc')
     +statTile(t('Gastos'),money(gas),inc?t('{p}% de tus ingresos',{p:Math.round(gas/inc*100)}):t('Sin ingresos aún'),'c-exp')
     +statTile(t('Ahorrado este mes'),money(ah),t('Total acumulado: {v}',{v:money(sum(null,'Ahorro')-savOut())}),'c-sav')+'</div>';
+  h+=ritmoHTML();
   h+=compareHTML(k,gas);
   h+=walletsCard();
   h+='<div class="grid two" style="margin-top:12px"><section class="card"><h2>'+t('Ingresos y gastos')+' <small>'+t('últimos 6 meses')+'</small></h2><div class="legend"><span class="li">'+t('Ingresos')+'</span><span class="le">'+t('Gastos')+'</span></div>'+chart()+'</section>';
@@ -1219,7 +1256,7 @@ function sheetHTML(){
   var s=ui.sheet,h='';
   var sym=esc(curSym(S.cc));
   if(s.kind==='move'){
-    var m=s.id?S.moves.filter(function(x){return x.id===s.id;})[0]:{type:s.type||'Gasto',date:iso(new Date())};
+    var m=s.id?S.moves.filter(function(x){return x.id===s.id;})[0]:{type:s.type||'Gasto',date:iso(new Date()),amount:s.amount,desc:s.desc||'',cat:s.cat||(s.momento?'Otro':'Alimentación')};
     var one=(m.type==='Ahorro'||m.type==='Deuda'),ttl=one?(m.type==='Ahorro'?(s.id?K('Editar ahorro'):K('Nuevo ahorro')):(s.id?K('Editar pago de deuda'):K('Nuevo pago de deuda'))):(s.id?K('Editar movimiento'):K('Nuevo movimiento'));
     h='<h2>'+t(ttl)+'</h2><form data-kind="move">'+(one?'<input type="hidden" name="type" value="'+m.type+'">':'<div class="seg" style="grid-template-columns:repeat(2,1fr)" role="radiogroup" aria-label="'+esc(t('Tipo'))+'">'
       +['Ingreso','Gasto'].map(function(tp){return '<div><input type="radio" name="type" id="t-'+tp+'" value="'+tp+'"'+(m.type===tp?' checked':'')+'><label for="t-'+tp+'">'+t(tp)+'</label></div>';}).join('')+'</div>')
@@ -1230,6 +1267,16 @@ function sheetHTML(){
       +'<label class="f full"><span>'+t('Descripción')+'</span><input id="f-desc" name="desc" placeholder="'+esc(t('Ej. Desayuno, pago semanal'))+'" value="'+esc(m.desc||'')+'"></label>'
       +'</div>'
       +'<div class="foot"><button class="btn grow" type="submit">'+t('Guardar')+'</button><button class="btn alt" type="button" data-a="close">'+t('Cancelar')+'</button>'+(s.id?'<button class="btn danger" type="button" data-a="del">'+t('Eliminar')+'</button>':'')+'</div></form>';
+  }else if(s.kind==='momento'){
+    var mg=activeGoals(),chosen=mg.filter(function(g){return g.id===s.goalId;})[0]||mg[0],ma=Math.max(0,Number(s.amount)||0),mr=chosen&&ma>0?momentoResult(chosen,ma):null;
+    h='<h2>Momento Claro</h2><p class="note" style="margin-top:-6px">Antes de gastar, mira qué decisión protege tu meta. Esto no registra ni mueve dinero.</p>'
+      +'<form data-kind="momento"><div class="fgrid"><label class="f full"><span>Meta que quieres proteger</span><select name="goalId">'+opts(mg,chosen&&chosen.id)+'</select></label>'
+      +'<label class="f"><span>Monto de la compra ('+sym+')</span><input name="amount" inputmode="decimal" required placeholder="0.00" value="'+(ma||'')+'"></label>'
+      +'<label class="f"><span>¿Qué estás pensando comprar?</span><input name="desc" maxlength="80" placeholder="Ej. delivery, ropa, salida" value="'+esc(s.desc||'')+'"></label></div>'
+      +(mr?'<section id="mom-res" class="card" style="margin-top:16px;background:var(--surface2)"><p class="eyebrow" style="margin:0 0 6px">EFECTO EN TU META</p><h3 style="margin:0">“'+esc(chosen.name)+'”</h3><p style="margin:10px 0 0">Esta compra equivale '+(mr.share<0.01?'a <b>menos del 1%</b>':'al <b>'+Math.round(mr.share*100)+'%</b>')+' de lo que aún te falta: <b class="num">'+money(mr.left)+'</b>.</p>'
+      +(mr.months?'<p class="note" style="margin:8px 0 0">Para mantener tu fecha del '+esc(dateLong(chosen.date))+', tu aporte mensual pasaría de <b class="num">'+money(mr.before)+'</b> a <b class="num">'+money(mr.after)+'</b>.</p>':'<p class="note" style="margin:8px 0 0">'+(chosen.date?'La fecha de esta meta ya pasó. Ponle una nueva para ver el aporte mensual estimado.':'Ponle una fecha a la meta para ver el aporte mensual estimado.')+'</p>')
+      +'</section>':'')
+      +'<div class="foot"><button class="btn grow" type="submit">Ver impacto</button>'+(mr?'<button class="btn alt" type="button" data-a="momento-register" data-goal="'+chosen.id+'" data-amount="'+ma+'" data-desc="'+esc(s.desc||'')+'">Registrar gasto</button>':'')+'<button class="btn alt" type="button" data-a="close">Cancelar</button></div></form>';
   }else if(s.kind==='goal'){
     var g=s.id?S.goals.filter(function(x){return x.id===s.id;})[0]:{};
     h='<h2>'+t(s.id?K('Editar meta'):K('Nueva meta'))+'</h2><form data-kind="goal"><div class="fgrid">'
@@ -1389,7 +1436,17 @@ function render(){
   if(ui.view==='movimientos'||ui.view==='resumen')v+='<button class="btn fab" data-a="new">'+t('+ Nuevo')+'</button>';
   document.getElementById('view').innerHTML=v;
   var sh=document.getElementById('sheet');
+  var prevKind=sh.dataset.kind||'',nextKind=ui.sheet?ui.sheet.kind:'';
+  var departing=!nextKind&&sh.firstElementChild;
+  if(departing&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    var ghost=departing.cloneNode(true);ghost.className='overlay pc-leave';ghost.inert=true;ghost.setAttribute('aria-hidden','true');
+    ghost.querySelectorAll('[id]').forEach(function(n){n.removeAttribute('id');});
+    document.body.appendChild(ghost);setTimeout(function(){ghost.remove();},170);
+  }
   if(ui.sheet){sh.innerHTML=sheetHTML();var f=sh.querySelector('input:not([type=radio]),select');if(f&&!ui.sheet.noFocus)f.focus();if(ui.sheet.kind==='copytext'){var ta=sh.querySelector('textarea');if(ta){ta.focus();ta.select();}}}else sh.innerHTML='';
+  sh.dataset.kind=nextKind;
+  if(nextKind&&nextKind!==prevKind&&sh.firstElementChild)sh.firstElementChild.classList.add('pc-enter');
+  if(ui.savedMove){document.querySelectorAll('#view [data-a="edit"]').forEach(function(n){if(n.dataset.id===ui.savedMove)n.classList.add('pc-saved');});ui.savedMove=null;}
   try{document.dispatchEvent(new CustomEvent('pc-render'));}catch(e){}
 }
 function toast(msg,undoId){var el=document.getElementById('toast');el.textContent=msg;
@@ -1587,6 +1644,8 @@ document.addEventListener('click',function(e){
   else if(a==='filter'){ui.filter=el.dataset.v;render();}
   else if(a==='new'){ui.sheet=(ui.space==='hogar'&&H.hh)?{kind:'hmove'}:{kind:'move'};render();}
   else if(a==='edit'){ui.sheet={kind:'move',id:id};render();}
+  else if(a==='momento'){var mg0=activeGoals(),g0=mg0.filter(function(g){return g.id===id;})[0]||mg0[0];if(!g0){ui.view='ahorros';render();toast('Crea una meta primero para usar Momento Claro.');return;}ui.sheet={kind:'momento',goalId:g0.id};render();}
+  else if(a==='momento-register'){ui.sheet={kind:'move',type:'Gasto',amount:Number(el.dataset.amount)||undefined,desc:el.dataset.desc||'',momento:true};render();}
   else if(a==='goal-new'){ui.sheet={kind:'goal'};render();}
   else if(a==='admin'){ui.sheet={kind:'admin',noFocus:true};render();admLoad();}
   else if(a==='adm-go'){admGo();}
@@ -1703,9 +1762,15 @@ document.addEventListener('submit',function(e){
     var wsel=(d.wallet?walletOf(d.wallet):null)||mainWallet(rec.cc||S.cc);
     if(wsel){if(lk&&mc(lk)!==wsel.cc){toast(t('La billetera y la meta o deuda deben usar la misma moneda.'));return;}rec.cc=wsel.cc;rec.w=wsel.id;}
     if(s.id)S.moves=S.moves.map(function(m){return m.id===s.id?rec:m;});else S.moves.push(rec);
+    ui.savedMove=rec.id;
     if(d.asquick&&!s.id&&(d.type==='Gasto'||d.type==='Ingreso')&&rec.desc)S.quicks.push({id:uid(),name:rec.desc,type:d.type,cat:rec.cat,amount:rec.amount,cc:rec.cc,w:rec.w});
     if(d.repeat&&!s.id&&(d.type==='Gasto'||d.type==='Ingreso')){S.recur=S.recur||[];S.recur.push({id:uid(),type:d.type,cat:rec.cat,desc:rec.desc,amount:rec.amount,cc:rec.cc,w:rec.w,day:+rec.date.slice(8,10)||1,next:nextKey(rec.date.slice(0,7)),prior:rec.prior||undefined,fromSav:rec.fromSav||undefined});}
     ui.month=rec.date.slice(0,7);msg=t(d.asquick&&!s.id?K('Movimiento y atajo guardados'):K('Movimiento guardado'))+(rec.w&&walletOf(rec.w)?' · '+walletOf(rec.w).name:'');
+  }else if(k==='momento'){
+    var mg1=activeGoals(),g1=mg1.filter(function(g){return g.id===d.goalId;})[0],m1=num(d.amount);
+    if(!g1){toast('Elige una meta para ver el impacto.');return;}
+    if(m1<=0){toast(t('Escribe un monto mayor que cero'));return;}
+    ui.sheet={kind:'momento',goalId:g1.id,amount:Math.round(m1*100)/100,desc:(d.desc||'').trim().slice(0,80)};render();return;
   }else if(k==='goal'){
     var gr={id:s.id||uid(),name:d.name.trim(),target:num(d.target),initial:num(d.initial),date:d.date||'',cc:validCur(d.cc)?d.cc:S.cc,kind:d.kind==='ext'?'ext':'own',owner:d.kind==='ext'?(d.owner||'').trim().slice(0,60):''};
     if(gr.target<=0){toast(t('El monto objetivo debe ser mayor que cero'));return;}
@@ -1802,7 +1867,11 @@ document.addEventListener('submit',function(e){
 document.addEventListener('click',function(e){var mn=document.getElementById('menu');if(mn&&!mn.hidden&&!e.target.closest('#b-menu')){mn.hidden=true;document.getElementById('b-menu').setAttribute('aria-expanded','false');}});
 function chime(){try{var A=window.AudioContext||window.webkitAudioContext,c=new A(),t0=c.currentTime;[[660,0],[880,.16]].forEach(function(n){var o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.value=n[0];g.gain.setValueAtTime(0,t0+n[1]);g.gain.linearRampToValueAtTime(.25,t0+n[1]+.02);g.gain.exponentialRampToValueAtTime(.001,t0+n[1]+.5);o.connect(g);g.connect(c.destination);o.start(t0+n[1]);o.stop(t0+n[1]+.55);});setTimeout(function(){c.close();},1500);}catch(e){}}
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',function(e){if(e.data&&e.data.type==='pc-push')chime();});
-document.addEventListener('input',function(e){if(e.target.id==='mq'){ui.q=e.target.value;var ml=document.getElementById('mlist');if(ml)ml.innerHTML=movList();}});
+document.addEventListener('input',function(e){if(e.target.id==='mq'){ui.q=e.target.value;var ml=document.getElementById('mlist');if(ml)ml.innerHTML=movList();}
+  momStale(e);});
+/* Momento Claro: si cambian meta o monto, el resultado anterior ya no corresponde; se pide "Ver impacto" de nuevo. */
+function momStale(e){var mf=e.target.closest&&e.target.closest('form[data-kind="momento"]');if(mf){var mrs=document.getElementById('mom-res'),mrb=mf.querySelector('[data-a="momento-register"]');if(mrs)mrs.remove();if(mrb)mrb.remove();}}
+document.addEventListener('change',momStale);
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.sheet)closeSheet();});
 window.__pc={hInit:function(){hRefresh();},hReset:function(){hReset();},maybeTour:maybeTour,setLang:setLang,langs:LANGS,t:t,view:function(){return ui.view;},get:function(){return S;},empty:function(){return emptyData();},apply:function(d){
   if(!d||!d.moves)return;
