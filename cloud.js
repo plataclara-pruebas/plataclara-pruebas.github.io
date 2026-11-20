@@ -246,7 +246,7 @@
   }
   function testPush() {
     return navigator.serviceWorker.ready.then(function (reg) {
-      return reg.showNotification('Plata Clara', { body: 'Así te avisaremos: “Mañana vence tu cuota”.', icon: 'icon-192.png', badge: 'badge.png', vibrate: [250, 120, 250, 120, 500], tag: 'prueba', data: { url: './#deudas' } });
+      return reg.showNotification('Plata Clara', { body: 'Así te avisaremos: “Mañana vence tu cuota”.', icon: 'notif-icon.png', badge: 'badge.png', vibrate: [250, 120, 250, 120, 500], tag: 'prueba', data: { url: './#deudas' } });
     });
   }
 
