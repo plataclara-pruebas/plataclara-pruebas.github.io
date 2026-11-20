@@ -7,6 +7,7 @@
 
   var SYNC_KEY = ((window.PC_CONFIG && window.PC_CONFIG.PREFIX) || '') + 'plataclara.sync', consentOK = false;
   var sb = null, user = null, pushTimer = null, pushing = false, pending = false, status = 'idle', applying = false;
+  var successTimer = null, successVisible = false;
   var btn = document.getElementById('b-account');
   if (btn) btn.hidden = false;
 
@@ -68,7 +69,13 @@
   }
 
   /* ---------- sincronización ---------- */
-  function setStatus(s) { status = s; paint(); }
+  function setStatus(s) {
+    clearTimeout(successTimer); successTimer = null;
+    status = s; successVisible = s === 'ok'; paint();
+    if (s === 'ok' && !getMark().dirty) successTimer = setTimeout(function () {
+      if (status === 'ok' && !getMark().dirty) { successVisible = false; mergeNotice = ''; paint(); }
+    }, mergeNotice ? 8000 : 3000);
+  }
 
   /* Fase A (2026-11): la marca guarda también "dirty" = hay cambios de este dispositivo sin subir (sobrevive a recargar).
      La subida es condicional: solo reemplaza la nube si sigue en la versión que este dispositivo conoce (updated_at = marca). */
@@ -171,8 +178,9 @@
 
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && user && !pushing && !pushTimer) reconcile();   // pushTimer vuelve a null tras cada subida
+    else if (!document.hidden && !user && getMark().uid && navigator.onLine !== false) boot();
   });
-  window.addEventListener('online', function () { if (user) reconcile(); });
+  window.addEventListener('online', function () { if (user) reconcile(); else if (getMark().uid) boot(); });
   window.addEventListener('offline', function () { if (user || getMark().uid) setStatus('offline'); });
 
   /* ---------- avisos de cuotas (notificaciones push) ---------- */
@@ -719,7 +727,7 @@
       else if (status === 'error') { text = 'No se pudo sincronizar. ' + (m.dirty ? changes + ', guardados en este dispositivo.' : 'Revisa tu conexión e inténtalo de nuevo.'); retry = true; }
       else if (status === 'conflict') { text = 'Hay cambios por revisar. Tus cambios siguen en este dispositivo.'; retry = true; }
       else if (status === 'saving' || m.dirty) text = 'Subiendo… ' + (m.dirty ? changes + ', guardados en este dispositivo.' : 'Comprobando tu cuenta.');
-      else if (status === 'ok') text = mergeNotice || 'En tu cuenta ✓';
+      else if (status === 'ok' && successVisible) text = mergeNotice || 'En tu cuenta ✓';
     }
     syncBar.hidden = !text;
     var label = syncBar.querySelector('span');
@@ -747,6 +755,8 @@
 
   /* Compuerta: la app no se ve hasta ingresar. */
   function boot() {
+    // Un dispositivo conocido puede abrir y guardar sin esperar la librería de acceso ni la red.
+    if (navigator.onLine === false && getMark().uid) { unlock(); setStatus('offline'); return; }
     lock();
     show('<h2>Cargando…</h2><p>Un momento.</p>');
     client().then(function () { return sb.auth.getSession(); }).then(function (r) {
