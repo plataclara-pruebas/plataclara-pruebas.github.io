@@ -1061,10 +1061,18 @@ function vPresu(){
 }
 function vAhorros(){
   var tot=sum(null,'Ahorro')-savOut(),inG=S.moves.reduce(function(a,m){return a+(m.type==='Ahorro'&&m.goalId?toBase(m):0);},0);
-  var h='<div class="toolbar"><div><span class="stat"><span class="k">'+t('Total ahorrado')+'</span><span class="v num c-sav" style="font-size:28px">'+money(tot)+'</span></span></div><button class="btn" data-a="save-new">'+t('Nuevo ahorro')+'</button></div>';
+  /* Saldo inicial: lo que ya tenía cada meta al crearla (mismo alcance que "En metas": metas en la moneda elegida). */
+  var initG=S.goals.reduce(function(a,g){return a+(mc(g)===S.cc?(Number(g.initial)||0):0);},0);
+  /* Otras monedas: solo se avisa; no se suman ni se convierten. */
+  var otras=[];S.moves.forEach(function(m){if(m.type==='Ahorro'&&mc(m)!==S.cc&&otras.indexOf(mc(m))<0)otras.push(mc(m));});
+  S.goals.forEach(function(g){if(mc(g)!==S.cc&&otras.indexOf(mc(g))<0)otras.push(mc(g));});
+  var h='<div class="toolbar"><div><span class="stat"><span class="k">'+t('Aportes anotados')+'</span><span class="v num c-sav" style="font-size:28px">'+money(tot)+'</span></span></div><button class="btn" data-a="save-new">'+t('Nuevo ahorro')+'</button></div>';
+  h+='<div class="grid stats" style="grid-template-columns:minmax(0,1fr)">'
+    +statTile(t('Ahorro total en la moneda elegida'),money(tot+initG),t('Aportes anotados + saldo inicial de tus metas'),'c-sav')+'</div>';
   h+='<div class="grid stats" style="grid-template-columns:repeat(2,minmax(0,1fr))">'
-    +statTile(t('En metas'),money(inG),t('Aportes a tus metas'),'c-sav')
+    +statTile(t('En metas'),money(inG+initG),t('Saldo inicial {a} · Aportes {b}',{a:money(initG),b:money(inG)}),'c-sav')
     +statTile(t('Ahorro general'),money(tot-inG),t('Sin una meta asignada'),'c-sav')+'</div>';
+  if(otras.length)h+='<p class="note" role="note" style="margin:10px 0 0">'+t('También tienes ahorros en {c}. No se suman aquí ni se convierten: cambia la moneda para verlos.',{c:esc(otras.join(', '))})+'</p>';
   h+='<div class="toolbar" style="margin-top:16px"><div class="day" style="margin:0">'+t('Tus metas')+'</div><button class="btn alt sm" data-a="goal-new">'+t('Nueva meta')+'</button></div>';
   h+=goalsBlock();
   var list=S.moves.filter(function(m){return m.type==='Ahorro'&&mc(m)===S.cc;}).sort(function(a,b){return b.date.localeCompare(a.date);});
@@ -1870,7 +1878,7 @@ if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('messag
 document.addEventListener('input',function(e){if(e.target.id==='mq'){ui.q=e.target.value;var ml=document.getElementById('mlist');if(ml)ml.innerHTML=movList();}
   momStale(e);});
 /* Momento Claro: si cambian meta o monto, el resultado anterior ya no corresponde; se pide "Ver impacto" de nuevo. */
-function momStale(e){var mf=e.target.closest&&e.target.closest('form[data-kind="momento"]');if(mf){var mrs=document.getElementById('mom-res'),mrb=mf.querySelector('[data-a="momento-register"]');if(mrs)mrs.remove();if(mrb)mrb.remove();}}
+function momStale(e){var mf=e.target.closest&&e.target.closest('form[data-kind="momento"]');if(mf){var mrs=document.getElementById('mom-res'),mrb=mf.querySelector('[data-a="momento-register"]');if(mrs){var nt=document.createElement('p');nt.id='mom-stale';nt.className='note';nt.setAttribute('role','status');nt.style.margin='16px 0 0';nt.textContent='Cambiaste los datos. Toca «Ver impacto» para actualizar.';mrs.replaceWith(nt);}if(mrb)mrb.remove();}}
 document.addEventListener('change',momStale);
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.sheet)closeSheet();});
 window.__pc={hInit:function(){hRefresh();},hReset:function(){hReset();},maybeTour:maybeTour,setLang:setLang,langs:LANGS,t:t,view:function(){return ui.view;},get:function(){return S;},empty:function(){return emptyData();},apply:function(d){
