@@ -224,6 +224,12 @@ input[aria-invalid="true"]:focus-visible{outline-color:var(--exp)}
 .sheet h2{font-size:20px;margin-bottom:14px}
 .sheet .foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .sheet .foot .grow{flex:1}
+/* Momento Claro: 12 px entre acciones (misma distribución). Error del monto: texto + icono, no solo color. */
+.sheet .foot.mom-foot{gap:12px}
+.mom-err{margin:0;color:var(--exp);font-size:13.5px;font-weight:600;line-height:1.3}
+.mom-err:empty{display:none}
+.mom-err:not(:empty)::before{content:"!";content:"!"/"";display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;margin-right:6px;border-radius:50%;background:var(--exp);color:var(--surface);font-size:11px;font-weight:800;vertical-align:-2px}
+#mom-amt[aria-invalid="true"]{border-color:var(--exp);box-shadow:inset 0 0 0 1px var(--exp)}
 /* Respuesta breve, sin retrasar guardado, foco ni cierre. */
 .btn,.icon-btn,.row{transition:background-color 150ms ease,box-shadow 150ms ease}
 .btn:active,.icon-btn:active,.row:active{box-shadow:inset 0 0 0 2px var(--accent)}
@@ -1288,12 +1294,13 @@ function sheetHTML(){
     var mg=activeGoals(),chosen=mg.filter(function(g){return g.id===s.goalId;})[0]||mg[0],ma=Math.max(0,Number(s.amount)||0),mr=chosen&&ma>0?momentoResult(chosen,ma):null;
     h='<h2>Momento Claro</h2><p class="note" style="margin-top:-6px">Antes de gastar, mira qué decisión protege tu meta. Esto no registra ni mueve dinero.</p>'
       +'<form data-kind="momento"><div class="fgrid"><label class="f full"><span>Meta que quieres proteger</span><select name="goalId">'+opts(mg,chosen&&chosen.id)+'</select></label>'
-      +'<label class="f"><span>Monto de la compra ('+sym+')</span><input name="amount" inputmode="decimal" required placeholder="0.00" value="'+(ma||'')+'"></label>'
-      +'<label class="f"><span>¿Qué estás pensando comprar?</span><input name="desc" maxlength="80" placeholder="Ej. delivery, ropa, salida" value="'+esc(s.desc||'')+'"></label></div>'
+      +'<label class="f"><span>Monto de la compra ('+sym+')</span><input id="mom-amt" name="amount" inputmode="decimal" aria-required="true" aria-describedby="mom-amt-err" placeholder="0.00" value="'+(ma||'')+'"></label>'
+      +'<label class="f"><span>¿Qué estás pensando comprar?</span><input name="desc" maxlength="80" placeholder="Ej. delivery, ropa, salida" value="'+esc(s.desc||'')+'"></label>'
+      +'<p class="mom-err full" id="mom-amt-err"></p></div>'
       +(mr?'<section id="mom-res" class="card" style="margin-top:16px;background:var(--surface2)"><p class="eyebrow" style="margin:0 0 6px">EFECTO EN TU META</p><h3 style="margin:0">“'+esc(chosen.name)+'”</h3><p style="margin:10px 0 0">Esta compra equivale '+(mr.share<0.01?'a <b>menos del 1%</b>':'al <b>'+Math.round(mr.share*100)+'%</b>')+' de lo que aún te falta: <b class="num">'+money(mr.left)+'</b>.</p>'
       +(mr.months?'<p class="note" style="margin:8px 0 0">Para mantener tu fecha del '+esc(dateLong(chosen.date))+', tu aporte mensual pasaría de <b class="num">'+money(mr.before)+'</b> a <b class="num">'+money(mr.after)+'</b>.</p>':'<p class="note" style="margin:8px 0 0">'+(chosen.date?'La fecha de esta meta ya pasó. Ponle una nueva para ver el aporte mensual estimado.':'Ponle una fecha a la meta para ver el aporte mensual estimado.')+'</p>')
       +'</section>':'')
-      +'<div class="foot"><button class="btn grow" type="submit">Ver impacto</button>'+(mr?'<button class="btn alt" type="button" data-a="momento-register" data-goal="'+chosen.id+'" data-amount="'+ma+'" data-desc="'+esc(s.desc||'')+'">Registrar gasto</button>':'')+'<button class="btn alt" type="button" data-a="close">Cancelar</button></div></form>';
+      +'<div class="foot mom-foot"><button class="btn grow" type="submit">Ver impacto</button>'+(mr?'<button class="btn alt" type="button" data-a="momento-register" data-goal="'+chosen.id+'" data-amount="'+ma+'" data-desc="'+esc(s.desc||'')+'">Registrar gasto</button>':'')+'<button class="btn alt" type="button" data-a="close">Cancelar</button></div></form>';
   }else if(s.kind==='goal'){
     var g=s.id?S.goals.filter(function(x){return x.id===s.id;})[0]:{};
     h='<h2>'+t(s.id?K('Editar meta'):K('Nueva meta'))+'</h2><form data-kind="goal"><div class="fgrid">'
@@ -1788,6 +1795,10 @@ document.addEventListener('submit',function(e){
     if(lk)rec.cc=mc(lk);   /* los aportes y pagos usan la moneda de su meta o deuda */
     var wsel=(d.wallet?walletOf(d.wallet):null)||mainWallet(rec.cc||S.cc);
     if(wsel){if(lk&&mc(lk)!==wsel.cc){toast(t('La billetera y la meta o deuda deben usar la misma moneda.'));return;}rec.cc=wsel.cc;rec.w=wsel.id;}
+    /* "De mis ahorros" solo usa el ahorro general (sin meta) de esa moneda. Nunca se descuenta una meta automáticamente. */
+    if(rec.fromSav){var cG=mc(rec),disp=S.moves.reduce(function(a,m){if(m.id===rec.id||mc(m)!==cG)return a;if(m.type==='Ahorro'&&!m.goalId)return a+m.amount;if(m.fromSav)return a-m.amount;return a;},0);
+      if(Math.round(rec.amount*100)>Math.round(disp*100)){savErr(f,true);return;}}
+    savErr(f,false);
     if(s.id)S.moves=S.moves.map(function(m){return m.id===s.id?rec:m;});else S.moves.push(rec);
     ui.savedMove=rec.id;
     if(d.asquick&&!s.id&&(d.type==='Gasto'||d.type==='Ingreso')&&rec.desc)S.quicks.push({id:uid(),name:rec.desc,type:d.type,cat:rec.cat,amount:rec.amount,cc:rec.cc,w:rec.w});
@@ -1796,7 +1807,7 @@ document.addEventListener('submit',function(e){
   }else if(k==='momento'){
     var mg1=activeGoals(),g1=mg1.filter(function(g){return g.id===d.goalId;})[0],m1=num(d.amount);
     if(!g1){toast('Elige una meta para ver el impacto.');return;}
-    if(m1<=0){toast(t('Escribe un monto mayor que cero'));return;}
+    if(!(m1>0)){momErr(f,true);return;}
     ui.sheet={kind:'momento',goalId:g1.id,amount:Math.round(m1*100)/100,desc:(d.desc||'').trim().slice(0,80)};render();return;
   }else if(k==='goal'){
     var gr={id:s.id||uid(),name:d.name.trim(),target:num(d.target),initial:num(d.initial),date:d.date||'',cc:validCur(d.cc)?d.cc:S.cc,kind:d.kind==='ext'?'ext':'own',owner:d.kind==='ext'?(d.owner||'').trim().slice(0,60):''};
@@ -1897,8 +1908,26 @@ if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('messag
 document.addEventListener('input',function(e){if(e.target.id==='mq'){ui.q=e.target.value;var ml=document.getElementById('mlist');if(ml)ml.innerHTML=movList();}
   momStale(e);});
 /* Momento Claro: si cambian meta o monto, el resultado anterior ya no corresponde; se pide "Ver impacto" de nuevo. */
-function momStale(e){var mf=e.target.closest&&e.target.closest('form[data-kind="momento"]');if(mf){var mrs=document.getElementById('mom-res'),mrb=mf.querySelector('[data-a="momento-register"]');if(mrs){var nt=document.createElement('p');nt.id='mom-stale';nt.className='note';nt.setAttribute('role','status');nt.style.margin='16px 0 0';nt.textContent='Cambiaste los datos. Toca «Ver impacto» para actualizar.';mrs.replaceWith(nt);}if(mrb)mrb.remove();}}
+function momStale(e){var mf=e.target.closest&&e.target.closest('form[data-kind="momento"]');if(mf){var mrs=document.getElementById('mom-res'),mrb=mf.querySelector('[data-a="momento-register"]');if(mrs){var nt=document.createElement('p');nt.id='mom-stale';nt.className='note';nt.setAttribute('role','status');nt.style.margin='16px 0 0';nt.textContent='Cambiaste los datos. Toca «Ver impacto» para actualizar.';mrs.replaceWith(nt);}if(mrb)mrb.remove();
+  if(e.target.id==='mom-amt'&&e.target.getAttribute('aria-invalid')==='true'&&num(e.target.value)>0)momErr(mf,false);}}
+/* Monto vacío, cero, negativo o no numérico: mensaje junto al campo (no solo un aviso flotante) y foco sin desplazar la vista. */
+function momErr(f,on){
+  var a=f&&f.querySelector('#mom-amt'),e=f&&f.querySelector('#mom-amt-err');if(!a||!e)return;
+  if(!on){a.removeAttribute('aria-invalid');e.removeAttribute('role');e.textContent='';return;}
+  var msg=t('Escribe un monto mayor que cero');a.setAttribute('aria-invalid','true');
+  if(document.activeElement===a){e.textContent='';e.setAttribute('role','alert');setTimeout(function(){e.textContent=msg;},30);}
+  else{e.removeAttribute('role');e.textContent=msg;try{a.focus({preventScroll:true});}catch(x){a.focus();}}
+}
 document.addEventListener('change',momStale);
+/* Aviso junto a "¿De dónde sale?" cuando el ahorro general no alcanza. Se quita al cambiar el origen o el monto. */
+function savErr(f,on){var o=f&&f.querySelector('select[name="origin"]'),e=f&&f.querySelector('#f-sav-err');
+  if(!on){if(e)e.remove();if(o)o.removeAttribute('aria-invalid');return;}
+  if(!o){toast(t('No tienes suficiente ahorro general. No descontaremos una meta automáticamente.'));return;}
+  if(!e){e=document.createElement('p');e.id='f-sav-err';e.className='note full';e.setAttribute('role','alert');e.style.cssText='margin:0;color:var(--exp);font-weight:600';o.closest('label').insertAdjacentElement('afterend',e);}
+  e.textContent=t('No tienes suficiente ahorro general. No descontaremos una meta automáticamente.');o.setAttribute('aria-invalid','true');o.setAttribute('aria-describedby','f-sav-err');try{o.focus({preventScroll:true});}catch(x){o.focus();}
+}
+document.addEventListener('change',function(e){var f=e.target.form;if(f&&f.dataset.kind==='move'&&e.target.name==='origin')savErr(f,false);});
+document.addEventListener('input',function(e){var f=e.target.form;if(f&&f.dataset.kind==='move'&&e.target.name==='amount'&&f.querySelector('#f-sav-err'))savErr(f,false);});
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&ui.sheet)closeSheet();});
 window.__pc={hInit:function(){hRefresh();},hReset:function(){hReset();},maybeTour:maybeTour,setLang:setLang,langs:LANGS,t:t,view:function(){return ui.view;},get:function(){return S;},empty:function(){return emptyData();},apply:function(d){
   if(!d||!d.moves)return;
