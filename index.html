@@ -90,6 +90,11 @@ h1,h2,h3{font-family:var(--f-display);margin:0;letter-spacing:-.01em;text-wrap:b
 .grid{display:grid;gap:12px}
 .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media (min-width:700px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.stats.summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card.wallet-summary{margin-top:12px;padding:12px 16px}
+.card.wallet-summary h2{margin-bottom:6px;align-items:center;flex-wrap:wrap}
+.wallet-summary .wallet-summary-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0}
+.wallet-summary-row>span:first-child{min-width:0;overflow-wrap:anywhere}
 .two{grid-template-columns:minmax(0,1fr)}
 @media (min-width:860px){.two{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
@@ -878,14 +883,12 @@ function budgetRows(k,onlyBudgeted){
 }
 
 function vResumen(){
-  var k=ui.month,inc=sum(k,'Ingreso'),gas=sum(k,'Gasto'),ah=sum(k,'Ahorro');
+  var k=ui.month,inc=sum(k,'Ingreso'),gas=sum(k,'Gasto');
   var wsR=wallets(S.cc),selW=ui.wal?walletOf(ui.wal):null,balR=selW?wBal(selW):wsR.reduce(function(a,w){return a+wBal(w);},0);
   var h=alertsHTML()+budgetAlertHTML()+owedAlertHTML()+quickBar()+monthBar();
-  h+='<div class="grid stats">'
+  h+='<div class="grid stats summary-stats">'
     +statTile(t('Mis billeteras'),money(balR),selW?esc(selW.name):t('Suma de todas tus billeteras'),balR<0?'c-exp':'',true)
-    +statTile(t('Ingresos'),money(inc),t('Lo que entró este mes'),'c-inc')
-    +statTile(t('Gastos'),money(gas),inc?t('{p}% de tus ingresos',{p:Math.round(gas/inc*100)}):t('Sin ingresos aún'),'c-exp')
-    +statTile(t('Ahorrado este mes'),money(ah),t('Total acumulado: {v}',{v:money(sum(null,'Ahorro')-savOut())}),'c-sav')+'</div>';
+    +statTile(t('Ingresos'),money(inc),t('Lo que entró este mes'),'c-inc')+'</div>';
   h+=ritmoHTML();
   h+=compareHTML(k,gas);
   h+=walletsCard();
@@ -982,8 +985,7 @@ function walletSelCc(cc){var ws=wallets(cc);return '<label class="f"><span>'+t('
 var WROW='display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;padding:12px 14px;border:0;border-bottom:1px solid var(--line);background:none;color:inherit;font:inherit;text-align:left;';
 function walletsCard(){
   var ws=wallets(S.cc);if(!ws.length)return '';
-  var tot=ws.reduce(function(a,w){return a+wBal(w);},0);
-  return '<section class="card" style="margin-top:12px"><h2>'+t('Mis billeteras')+' <small>'+money(tot)+'</small></h2>'+ws.map(function(w){var b=wBal(w);return '<div style="'+WROW+'"><span>'+esc(w.name)+'</span><span class="num '+(b<0?'c-exp':'')+'">'+money(b)+'</span></div>';}).join('')+'<button class="btn alt sm" data-a="nav" data-v="billeteras" style="margin-top:10px">'+t('Billeteras')+'</button></section>';
+  return '<section class="card wallet-summary"><h2>'+t('Mis billeteras')+' <button class="btn alt sm" data-a="nav" data-v="billeteras">'+t('Billeteras')+'</button></h2>'+ws.map(function(w){var b=wBal(w);return '<div class="wallet-summary-row"><span>'+esc(w.name)+'</span><span class="num '+(b<0?'c-exp':'')+'">'+money(b)+'</span></div>';}).join('')+'</section>';
 }
 function vBilleteras(){
   var ws=wallets(S.cc),tot=ws.reduce(function(a,w){return a+wBal(w);},0);
