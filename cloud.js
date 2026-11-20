@@ -137,7 +137,7 @@
       setMark({ uid: user.id, at: row.updated_at, dirty: true, count: mark.count || 1 });
       mergeNotice = result.conflicts ? 'Se juntaron los cambios. Para elementos editados en ambos dispositivos se conservó la edición más reciente.' : 'Se juntaron los cambios de tus dispositivos.';
       return pushNow(false, attempt);
-    } catch (e) { setStatus('error'); return Promise.resolve('error'); }
+    } catch (e) { if (e.code === 'UNVERSIONED') { conflictSheet(row); return Promise.resolve('conflict'); } setStatus('error'); return Promise.resolve('error'); }
   }
 
   window.PCSb = function () { return sb; };
@@ -608,7 +608,7 @@
     var lista = function (a) { return a.length ? '<ul style="margin:4px 0 10px;padding-left:20px">' + a.slice(0, 3).map(function (m) { return '<li>' + esc(m.desc || m.cat || m.type) + '</li>'; }).join('') + (a.length > 3 ? '<li>y ' + (a.length - 3) + ' más</li>' : '') + '</ul>' : '<p style="margin:4px 0 10px">Ninguno (pueden ser ediciones o borrados).</p>'; };
     show(
       '<h2>Hay cambios en otro dispositivo</h2>' +
-      '<p>Mientras usabas este dispositivo, tu cuenta recibió cambios desde otro. Todavía no podemos juntarlos: elige qué versión conservar.</p>' +
+      '<p>Tu cuenta recibió cambios desde una versión anterior de la app sin historial de edición compatible. Revisa qué versión conservar antes de continuar.</p>' +
       '<p style="margin:10px 0 0"><b>Solo en este dispositivo (' + soloAqui.length + '):</b></p>' + lista(soloAqui) +
       '<p style="margin:0"><b>Solo en tu cuenta (' + soloNube.length + '):</b></p>' + lista(soloNube) +
       '<button class="pc-b" data-c="local">Conservar los de este dispositivo</button>' +

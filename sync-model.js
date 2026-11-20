@@ -3,10 +3,16 @@
   'use strict';
   var lists = ['moves', 'goals', 'debts', 'quicks', 'wallets', 'owed', 'xfers', 'recur'];
   function copy(x) { return JSON.parse(JSON.stringify(x)); }
-  function same(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+  // JSONB puede devolver las claves en otro orden: eso no es una edición.
+  function stable(x) {
+    if (!x || typeof x !== 'object') return JSON.stringify(x);
+    if (Array.isArray(x)) return '[' + x.map(stable).join(',') + ']';
+    return '{' + Object.keys(x).sort().map(function (k) { return JSON.stringify(k) + ':' + stable(x[k]); }).join(',') + '}';
+  }
+  function same(a, b) { return stable(a) === stable(b); }
   function clean(x) { var y = copy(x); delete y.u; return y; }
   function stamp(at, by, seq, deleted) { return { at: at, by: by || '', seq: seq || 0, deleted: !!deleted }; }
-  function cmp(a, b) { return a.at - b.at || String(a.by).localeCompare(String(b.by)) || a.seq - b.seq; }
+  function cmp(a, b) { return a.at - b.at || (a.by < b.by ? -1 : a.by > b.by ? 1 : 0) || a.seq - b.seq; }
   function fields(d, prefix, out) {
     Object.keys(d).sort().forEach(function (k) {
       if (!prefix.length && (lists.indexOf(k) >= 0 || k === '_sync')) return;
@@ -66,6 +72,7 @@
     if (k === '__proto__' || k === 'constructor' || k === 'prototype') throw new Error('Campo inválido');
     o[k] = copy(value);
   }
+  function unversioned() { var e = new Error('Cambios sin historial de edición compatible'); e.code = 'UNVERSIONED'; throw e; }
   function merge(local, remote, localAt, remoteAt) {
     var a = normalize(local, localAt), b = normalize(remote, remoteAt);
     var out = {}, meta = { version: 1, items: {}, fields: {} }, conflicts = 0;
@@ -76,6 +83,8 @@
       var result = [];
       Array.from(new Set(Object.keys(am).concat(Object.keys(bm)))).sort().forEach(function (id) {
         var x = am[id], y = bm[id], useA = !y || (x && cmp(x, y) >= 0), win = useA ? x : y;
+        if ((x && !x.deleted && !ai.has(id)) || (y && !y.deleted && !bi.has(id))) unversioned();
+        if (x && y && !cmp(x, y) && !x.deleted && !same(clean(ai.get(id)), clean(bi.get(id)))) unversioned();
         if (x && y && cmp(x, y) && (x.by && y.by) && !same(ai.get(id), bi.get(id))) conflicts++;
         om[id] = copy(win);
         var item = (useA ? ai : bi).get(id);
@@ -86,6 +95,7 @@
     var af = fields(a, [], {}), bf = fields(b, [], {});
     Array.from(new Set(Object.keys(a._sync.fields).concat(Object.keys(b._sync.fields)))).sort(function (x, y) { return JSON.parse(x).length - JSON.parse(y).length || x.localeCompare(y); }).forEach(function (key) {
       var x = a._sync.fields[key], y = b._sync.fields[key], useA = !y || (x && cmp(x, y) >= 0), win = useA ? x : y;
+      if (x && y && !cmp(x, y) && !x.deleted && !same(af[key], bf[key])) unversioned();
       meta.fields[key] = copy(win);
       if (!win.deleted) put(out, JSON.parse(key), (useA ? af : bf)[key]);
     });
