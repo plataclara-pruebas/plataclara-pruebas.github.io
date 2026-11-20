@@ -53,28 +53,48 @@
   /* ---------- sincronización ---------- */
   function setStatus(s) { status = s; paint(); }
 
-  function pushNow() {
-    if (!user || !sb) return Promise.resolve();
-    if (pushing) { pending = true; return Promise.resolve(); }
+  /* Fase A (2026-11): la marca guarda también "dirty" = hay cambios de este dispositivo sin subir (sobrevive a recargar).
+     La subida es condicional: solo reemplaza la nube si sigue en la versión que este dispositivo conoce (updated_at = marca). */
+  function tms(s) { var n = Date.parse(s || ''); return isNaN(n) ? 0 : n; }
+  function markDirty() { var m = getMark(); if (user && m.uid === user.id && !m.dirty) { m.dirty = true; setMark(m); } }
+  var inflight = null, saveSeq = 0;   // saveSeq: guardados locales; si cambia durante una subida, sigue habiendo pendientes
+  // Devuelve una promesa con 'ok' | 'error' | 'conflict'. force=true: reemplaza la nube (solo cuando la persona lo eligió o no hay versión previa).
+  function pushNow(force) {
+    if (!user || !sb) return Promise.resolve('error');
+    if (pushing) { pending = true; return inflight || Promise.resolve('ok'); }
+    clearTimeout(pushTimer); pushTimer = null;
     pushing = true; setStatus('saving');
-    var now = new Date().toISOString();
-    return sb.from('user_data').upsert({ user_id: user.id, data: st(), updated_at: now }).then(function (r) {
-      pushing = false;
-      if (r.error) { setStatus('error'); return; }
-      setMark({ uid: user.id, at: now });
+    var mark = getMark(), now = new Date().toISOString(), mySeq = saveSeq, body = { data: st(), updated_at: now };
+    var cond = !force && mark.uid === user.id && mark.at;
+    var q = cond
+      ? sb.from('user_data').update(body).eq('user_id', user.id).eq('updated_at', mark.at).select('updated_at')
+      : sb.from('user_data').upsert({ user_id: user.id, data: body.data, updated_at: now }).select('updated_at');
+    inflight = q.then(function (r) {
+      pushing = false; inflight = null;
+      if (r.error) { setStatus('error'); return 'error'; }
+      if (!r.data || !r.data.length) {                         // la nube cambió desde nuestra versión (u otra fila): no pisar
+        return sb.from('user_data').select('data,updated_at').eq('user_id', user.id).maybeSingle().then(function (r2) {
+          if (r2.error) { setStatus('error'); return 'error'; }
+          if (!r2.data) return pushNow(true);                  // no había fila: primera subida
+          conflictSheet(r2.data); return 'conflict';
+        }, function () { setStatus('error'); return 'error'; });
+      }
+      setMark({ uid: user.id, at: r.data[0].updated_at, dirty: pending || saveSeq !== mySeq });
       setStatus('ok');
       if (pending) { pending = false; schedulePush(); }
-    }, function () { pushing = false; setStatus('error'); });
+      return 'ok';
+    }, function () { pushing = false; inflight = null; setStatus('error'); return 'error'; });
+    return inflight;
   }
-  function schedulePush() { clearTimeout(pushTimer); pushTimer = setTimeout(pushNow, 1500); }
+  function schedulePush() { clearTimeout(pushTimer); pushTimer = setTimeout(function () { pushTimer = null; pushNow(); }, 1500); }
 
   /* La app llama a esto cada vez que guarda. */
-  window.__pcPush = function () { if (user && !applying) schedulePush(); };
+  window.__pcPush = function () { if (user && !applying) { saveSeq++; markDirty(); schedulePush(); } };
 
   function applyRemote(row) {
     applying = true;
     try { window.__pc.apply(row.data); } finally { applying = false; }
-    setMark({ uid: user.id, at: row.updated_at });
+    setMark({ uid: user.id, at: row.updated_at, dirty: false });
     setStatus('ok');
   }
 
@@ -91,10 +111,14 @@
     return sb.from('user_data').select('data,updated_at').eq('user_id', user.id).maybeSingle().then(function (r) {
       if (r.error) { setStatus('error'); return; }
       var row = r.data, mark = getMark(), local = st();
-      if (!row) { return pushNow(); }                          // primera vez en la nube: subir lo de este dispositivo
+      if (!row) { return pushNow(true); }                      // primera vez en la nube: subir lo de este dispositivo
       if (mark.uid === user.id) {                              // este dispositivo ya se había sincronizado antes
-        if (row.updated_at > (mark.at || '')) return applyRemote(row);   // la nube es más nueva
-        return pushNow();                                      // lo local es igual o más nuevo
+        if (tms(row.updated_at) > tms(mark.at)) {              // la nube es más nueva
+          if (mark.dirty) { conflictSheet(row); return; }      // ...y aquí hay cambios sin subir: no se reemplazan sin preguntar
+          return applyRemote(row);
+        }
+        if (mark.dirty === false) { setStatus('ok'); return; } // al día y sin pendientes: nada que subir
+        return pushNow();                                      // pendientes (o marca antigua sin "dirty"): subida condicional
       }
       if (!hasUserData(local)) return applyRemote(row);        // dispositivo sin datos propios: bajar la nube
       setStatus('ok'); chooseSheet(row);                       // ambos tienen datos: que decida la persona
@@ -102,7 +126,7 @@
   }
 
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden && user && !pushing && !pushTimer) reconcile();
+    if (!document.hidden && user && !pushing && !pushTimer) reconcile();   // pushTimer vuelve a null tras cada subida
   });
   window.addEventListener('online', function () { if (user) reconcile(); });
 
@@ -522,7 +546,35 @@
         o.querySelectorAll('[data-c]').forEach(function (b) {
           b.onclick = function () {
             var c = b.getAttribute('data-c'); close();
-            if (c === 'cloud') applyRemote(row); else pushNow();
+            if (c === 'cloud') applyRemote(row); else pushNow(true);
+          };
+        });
+      });
+  }
+
+  /* Fase A: la nube cambió (otro dispositivo) y aquí hay cambios sin subir. Sin fusión todavía: se muestra qué se perdería y decide la persona. */
+  function conflictSheet(row) {
+    setStatus('conflict');
+    var loc = st() || {}, rem = row.data || {};
+    var ids = function (d) { var o = {}; (d.moves || []).forEach(function (m) { o[m.id] = m; }); return o; };
+    var li = ids(loc), ri = ids(rem);
+    var soloAqui = Object.keys(li).filter(function (k) { return !ri[k]; }).map(function (k) { return li[k]; });
+    var soloNube = Object.keys(ri).filter(function (k) { return !li[k]; }).map(function (k) { return ri[k]; });
+    var lista = function (a) { return a.length ? '<ul style="margin:4px 0 10px;padding-left:20px">' + a.slice(0, 3).map(function (m) { return '<li>' + esc(m.desc || m.cat || m.type) + '</li>'; }).join('') + (a.length > 3 ? '<li>y ' + (a.length - 3) + ' más</li>' : '') + '</ul>' : '<p style="margin:4px 0 10px">Ninguno (pueden ser ediciones o borrados).</p>'; };
+    show(
+      '<h2>Hay cambios en otro dispositivo</h2>' +
+      '<p>Mientras usabas este dispositivo, tu cuenta recibió cambios desde otro. Todavía no podemos juntarlos: elige qué versión conservar.</p>' +
+      '<p style="margin:10px 0 0"><b>Solo en este dispositivo (' + soloAqui.length + '):</b></p>' + lista(soloAqui) +
+      '<p style="margin:0"><b>Solo en tu cuenta (' + soloNube.length + '):</b></p>' + lista(soloNube) +
+      '<button class="pc-b" data-c="local">Conservar los de este dispositivo</button>' +
+      '<button class="pc-b alt" data-c="cloud">Usar los de mi cuenta</button>' +
+      '<button class="pc-b alt" data-c="later">Decidir después</button>' +
+      '<div class="pc-m" role="status">Lo que no elijas se reemplaza. Si decides después, tus cambios siguen guardados en este dispositivo y no se suben.</div>',
+      function (o) {
+        o.querySelectorAll('[data-c]').forEach(function (b) {
+          b.onclick = function () {
+            var c = b.getAttribute('data-c'); close();
+            if (c === 'cloud') applyRemote(row); else if (c === 'local') pushNow(true); else setStatus('conflict');
           };
         });
       });
@@ -553,11 +605,12 @@
   }
 
   function accountSheet() {
-    var label = { saving: 'Guardando…', ok: 'Todo guardado en la nube', error: 'No se pudo guardar. Se reintentará al guardar de nuevo.', idle: '' }[status];
+    var label = { saving: 'Guardando…', ok: 'Todo guardado en la nube', error: 'No se pudo guardar. Se reintentará al guardar de nuevo.', conflict: 'Hay cambios en otro dispositivo. Toca “Sincronizar ahora” para elegir qué conservar.', idle: '' }[status];
+    if (status === 'ok' && getMark().dirty) label = 'Hay cambios en este dispositivo sin subir.';
     currentSub().then(function (sub) {
       show(
         '<h2>Tu cuenta</h2><p>' + esc(user.email) + '</p>' +
-        '<div class="pc-m ' + (status === 'error' ? 'e' : 'o') + '">' + label + '</div>' +
+        '<div class="pc-m ' + (status === 'error' || status === 'conflict' ? 'e' : 'o') + '">' + label + '</div>' +
         '<button class="pc-b alt" data-s>Sincronizar ahora</button>' +
         pushBlock(sub) +
         '<button class="pc-b alt" data-o>Cerrar sesión</button>' +
@@ -565,13 +618,17 @@
         '<button class="pc-l" data-del style="color:#BE4129">Eliminar mi cuenta</button>' +
         '<div class="pc-m e" data-dm style="min-height:0"></div>',
         function (o) {
-          o.querySelector('[data-s]').onclick = function () { reconcile().then(function () { if (ov) accountSheet(); }); };
+          o.querySelector('[data-s]').onclick = function () { reconcile().then(function () { if (ov && status !== 'conflict') accountSheet(); }); };
           o.querySelector('[data-o]').onclick = function () {
             clearTimeout(pushTimer); pushTimer = null;
+            var dm0 = o.querySelector('[data-dm]');
             Promise.resolve(disablePush()).catch(function () {})            // este dispositivo deja de recibir avisos de esta cuenta
-              .then(function () { return pushNow(); })
-              .then(function () { return sb.auth.signOut(); })
-              .then(function () { wipeLocal(); });
+              .then(function () { return getMark().dirty === false ? 'ok' : pushNow(); })
+              .then(function (res) {                                         // Fase A: no cerrar sesión (y borrar lo local) con cambios sin subir
+                if (res !== 'ok') { if (res === 'error' && dm0) dm0.textContent = 'No se pudieron subir tus últimos cambios. Conéctate a internet e inténtalo de nuevo antes de cerrar sesión.'; throw new Error('pendiente'); }
+                return sb.auth.signOut();
+              })
+              .then(function () { wipeLocal(); }, function () {});
           };
           o.querySelector('[data-x]').onclick = close;
           o.querySelector('[data-del]').onclick = function () {
@@ -606,7 +663,7 @@
     if (!btn) return;
     btn.classList.toggle('on', !!user);
     btn.setAttribute('aria-label', user ? 'Tu cuenta' : 'Ingresar');
-    btn.title = user ? (status === 'error' ? 'Error al sincronizar' : 'Sincronizado') : 'Ingresar';
+    btn.title = user ? (status === 'error' ? 'Error al sincronizar' : status === 'conflict' ? 'Cambios por revisar' : getMark().dirty ? 'Cambios sin subir' : 'Sincronizado') : 'Ingresar';
   }
 
   if (btn) btn.addEventListener('click', function () {
