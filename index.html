@@ -657,7 +657,7 @@ function reseedDemo(){
 
 var mem=null;
 function load(){try{var s=localStorage.getItem(KEY);if(s){var d=JSON.parse(s);if(d&&d.moves)return d;}}catch(e){}return mem;}
-function save(){mem=S;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}try{if(window.__pcPush)window.__pcPush();}catch(e){}}
+function save(){if(window.__pcTrack)window.__pcTrack(S);mem=S;try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}try{if(window.__pcPush)window.__pcPush();}catch(e){}}
 var S=load();
 if(S){
   LANG=validLang(S.lang)?S.lang:detectLang();
@@ -1949,6 +1949,7 @@ window.__pc={hInit:function(){hRefresh();},hReset:function(){hReset();},maybeTou
 render();
 })();
 </script>
+<script src="sync-model.js"></script>
 <script src="cloud.js"></script>
 <script>
 /* Actualización automática: registra el service worker y recarga cuando hay versión nueva */

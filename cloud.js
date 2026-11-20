@@ -17,11 +17,28 @@
     applying = true;
     try { window.__pc.apply(window.__pc.empty()); } finally { applying = false; }
     setMark({});
+    if (model) remember(); legacyPending = false; mergeNotice = '';
   }
   function getMark() { try { return JSON.parse(localStorage.getItem(SYNC_KEY)) || {}; } catch (e) { return {}; } }
   function setMark(o) { try { localStorage.setItem(SYNC_KEY, JSON.stringify(o)); } catch (e) {} }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function st() { return window.__pc && window.__pc.get(); }
+  var model = window.PCSyncModel, snapshot = model.copy(st()), legacyPending = !!(getMark().legacyReview || (getMark().dirty && !st()._sync));
+  if (legacyPending) { var oldMark = getMark(); oldMark.legacyReview = true; setMark(oldMark); }
+  var actorKey = SYNC_KEY + '.device', actor;
+  try { actor = localStorage.getItem(actorKey); if (!actor) { actor = crypto.randomUUID(); localStorage.setItem(actorKey, actor); } }
+  catch (e) { actor = Math.random().toString(36).slice(2); }
+  function remember() { snapshot = model.copy(st()); }
+  var trackFailed = false;
+  window.__pcTrack = function (data) {
+    if (applying) return;
+    try {
+      var tracked = model.track(snapshot, data, getMark().at, actor, saveSeq + 1);
+      data._sync = tracked._sync;
+      ['moves', 'goals', 'debts', 'quicks', 'wallets', 'owed', 'xfers', 'recur'].forEach(function (k) { if (tracked[k]) data[k] = tracked[k]; });
+      remember(); trackFailed = false;
+    } catch (e) { trackFailed = true; setStatus('error'); } // el guardado local continúa aunque no pueda sincronizar
+  };
   function hasUserData(d) { return !!(d && !d.demo && ((d.moves && d.moves.length) || (d.goals && d.goals.length) || (d.debts && d.debts.length))); }
 
   /* ---------- carga de la librería ---------- */
@@ -56,46 +73,71 @@
   /* Fase A (2026-11): la marca guarda también "dirty" = hay cambios de este dispositivo sin subir (sobrevive a recargar).
      La subida es condicional: solo reemplaza la nube si sigue en la versión que este dispositivo conoce (updated_at = marca). */
   function tms(s) { var n = Date.parse(s || ''); return isNaN(n) ? 0 : n; }
-  function markDirty() { var m = getMark(); if (user && m.uid === user.id && !m.dirty) { m.dirty = true; setMark(m); } }
+  function markDirty() { var m = getMark(); if ((user && m.uid === user.id) || (!user && m.uid)) { m.dirty = true; m.count = (m.count || 0) + 1; setMark(m); } }
   var inflight = null, saveSeq = 0;   // saveSeq: guardados locales; si cambia durante una subida, sigue habiendo pendientes
   // Devuelve una promesa con 'ok' | 'error' | 'conflict'. force=true: reemplaza la nube (solo cuando la persona lo eligió o no hay versión previa).
-  function pushNow(force) {
+  function pushNow(force, attempt) {
+    attempt = attempt || 0;
     if (!user || !sb) return Promise.resolve('error');
+    if (trackFailed) { setStatus('error'); return Promise.resolve('error'); }
     if (pushing) { pending = true; return inflight || Promise.resolve('ok'); }
     clearTimeout(pushTimer); pushTimer = null;
+    var uid = user.id, mark = getMark(), now = new Date(Math.max(Date.now(), tms(mark.at) + 1)).toISOString(), mySeq = saveSeq, body;
+    try { body = { data: model.normalize(st(), mark.at), updated_at: now }; }
+    catch (e) { setStatus('error'); return Promise.resolve('error'); }
     pushing = true; setStatus('saving');
-    var mark = getMark(), now = new Date().toISOString(), mySeq = saveSeq, body = { data: st(), updated_at: now };
     var cond = !force && mark.uid === user.id && mark.at;
-    var q = cond
+    var q = force === 'create'
+      ? sb.from('user_data').insert({ user_id: user.id, data: body.data, updated_at: now }).select('updated_at')
+      : cond
       ? sb.from('user_data').update(body).eq('user_id', user.id).eq('updated_at', mark.at).select('updated_at')
       : sb.from('user_data').upsert({ user_id: user.id, data: body.data, updated_at: now }).select('updated_at');
     inflight = q.then(function (r) {
       pushing = false; inflight = null;
-      if (r.error) { setStatus('error'); return 'error'; }
+      if (!user || user.id !== uid) return 'error';
+      if (r.error && !(force === 'create' && r.error.code === '23505')) { setStatus('error'); return 'error'; }
       if (!r.data || !r.data.length) {                         // la nube cambió desde nuestra versión (u otra fila): no pisar
         return sb.from('user_data').select('data,updated_at').eq('user_id', user.id).maybeSingle().then(function (r2) {
           if (r2.error) { setStatus('error'); return 'error'; }
-          if (!r2.data) return pushNow(true);                  // no había fila: primera subida
-          conflictSheet(r2.data); return 'conflict';
+          if (!r2.data) return pushNow('create');              // INSERT evita pisar una primera subida concurrente
+          if (attempt >= 4) { setStatus('error'); return 'error'; }
+          return mergeRemote(r2.data, attempt + 1);
         }, function () { setStatus('error'); return 'error'; });
       }
-      setMark({ uid: user.id, at: r.data[0].updated_at, dirty: pending || saveSeq !== mySeq });
+      var newer = pending || saveSeq !== mySeq;
+      setMark({ uid: user.id, at: r.data[0].updated_at, dirty: newer, count: newer ? getMark().count || 1 : 0 });
+      legacyPending = false;
       setStatus('ok');
-      if (pending) { pending = false; schedulePush(); }
+      if (newer) { pending = false; schedulePush(); }
       return 'ok';
     }, function () { pushing = false; inflight = null; setStatus('error'); return 'error'; });
     return inflight;
   }
-  function schedulePush() { clearTimeout(pushTimer); pushTimer = setTimeout(function () { pushTimer = null; pushNow(); }, 1500); }
+  function schedulePush() { clearTimeout(pushTimer); setStatus(navigator.onLine === false ? 'offline' : 'saving'); pushTimer = setTimeout(function () { pushTimer = null; pushNow(); }, 1500); }
 
   /* La app llama a esto cada vez que guarda. */
-  window.__pcPush = function () { if (user && !applying) { saveSeq++; markDirty(); schedulePush(); } };
+  window.__pcPush = function () { if (!applying && (user || getMark().uid)) { saveSeq++; markDirty(); if (trackFailed) setStatus('error'); else if (user) schedulePush(); else setStatus('offline'); } };
 
   function applyRemote(row) {
     applying = true;
-    try { window.__pc.apply(row.data); } finally { applying = false; }
-    setMark({ uid: user.id, at: row.updated_at, dirty: false });
+    try { window.__pc.apply(model.normalize(row.data, row.updated_at)); } finally { applying = false; }
+    remember(); legacyPending = false; trackFailed = false;
+    setMark({ uid: user.id, at: row.updated_at, dirty: false, count: 0 });
     setStatus('ok');
+  }
+
+  var mergeNotice = '';
+  function mergeRemote(row, attempt) {
+    if (legacyPending || !row.data._sync) { conflictSheet(row); return Promise.resolve('conflict'); }
+    try {
+      var mark = getMark(), result = model.merge(st(), row.data, mark.at, row.updated_at);
+      applying = true;
+      try { window.__pc.apply(result.data); } finally { applying = false; }
+      remember();
+      setMark({ uid: user.id, at: row.updated_at, dirty: true, count: mark.count || 1 });
+      mergeNotice = result.conflicts ? 'Se juntaron los cambios. Para elementos editados en ambos dispositivos se conservó la edición más reciente.' : 'Se juntaron los cambios de tus dispositivos.';
+      return pushNow(false, attempt);
+    } catch (e) { setStatus('error'); return Promise.resolve('error'); }
   }
 
   window.PCSb = function () { return sb; };
@@ -106,15 +148,17 @@
   }
   function reconcile() {
     loadPlan();
-    if (!user) return Promise.resolve();
+    if (!user || pushing) return inflight || Promise.resolve();
+    var readAt = getMark().at, readUid = user.id;
     setStatus('saving');
     return sb.from('user_data').select('data,updated_at').eq('user_id', user.id).maybeSingle().then(function (r) {
       if (r.error) { setStatus('error'); return; }
       var row = r.data, mark = getMark(), local = st();
-      if (!row) { return pushNow(true); }                      // primera vez en la nube: subir lo de este dispositivo
+      if (!user || user.id !== readUid || mark.at !== readAt) return;
+      if (!row) { return pushNow('create'); }                  // primera vez en la nube: insertar sin sobrescribir
       if (mark.uid === user.id) {                              // este dispositivo ya se había sincronizado antes
-        if (tms(row.updated_at) > tms(mark.at)) {              // la nube es más nueva
-          if (mark.dirty) { conflictSheet(row); return; }      // ...y aquí hay cambios sin subir: no se reemplazan sin preguntar
+        if (row.updated_at !== mark.at) {                     // cualquier versión distinta, incluso con reloj atrasado
+          if (mark.dirty) return mergeRemote(row, 0);
           return applyRemote(row);
         }
         if (mark.dirty === false) { setStatus('ok'); return; } // al día y sin pendientes: nada que subir
@@ -129,6 +173,7 @@
     if (!document.hidden && user && !pushing && !pushTimer) reconcile();   // pushTimer vuelve a null tras cada subida
   });
   window.addEventListener('online', function () { if (user) reconcile(); });
+  window.addEventListener('offline', function () { if (user || getMark().uid) setStatus('offline'); });
 
   /* ---------- avisos de cuotas (notificaciones push) ---------- */
   var VAPID = C.VAPID_PUBLIC_KEY || '';
@@ -143,7 +188,7 @@
   function myTz() { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Lima'; } catch (e) { return 'America/Lima'; } }
   function currentSub() {
     if (!pushSupported()) return Promise.resolve(null);
-    return navigator.serviceWorker.ready.then(function (reg) { return reg.pushManager.getSubscription(); }).catch(function () { return null; });
+    return navigator.serviceWorker.getRegistration().then(function (reg) { return reg && reg.active ? reg.pushManager.getSubscription() : null; }).catch(function () { return null; });
   }
   function enablePush() {
     return enablePush0().then(function () { return refreshNotif(); });
@@ -605,7 +650,7 @@
   }
 
   function accountSheet() {
-    var label = { saving: 'Guardando…', ok: 'Todo guardado en la nube', error: 'No se pudo guardar. Se reintentará al guardar de nuevo.', conflict: 'Hay cambios en otro dispositivo. Toca “Sincronizar ahora” para elegir qué conservar.', idle: '' }[status];
+    var label = { saving: 'Subiendo cambios…', ok: 'Todo guardado en la nube', offline: 'Sin conexión. Tus cambios siguen en este dispositivo.', error: 'No se pudo sincronizar. Tus cambios siguen en este dispositivo. Toca “Sincronizar ahora” para reintentar.', conflict: 'Hay cambios anteriores a esta actualización. Toca “Sincronizar ahora” para elegir qué conservar.', idle: '' }[status];
     if (status === 'ok' && getMark().dirty) label = 'Hay cambios en este dispositivo sin subir.';
     currentSub().then(function (sub) {
       show(
@@ -624,8 +669,8 @@
             var dm0 = o.querySelector('[data-dm]');
             Promise.resolve(disablePush()).catch(function () {})            // este dispositivo deja de recibir avisos de esta cuenta
               .then(function () { return getMark().dirty === false ? 'ok' : pushNow(); })
-              .then(function (res) {                                         // Fase A: no cerrar sesión (y borrar lo local) con cambios sin subir
-                if (res !== 'ok') { if (res === 'error' && dm0) dm0.textContent = 'No se pudieron subir tus últimos cambios. Conéctate a internet e inténtalo de nuevo antes de cerrar sesión.'; throw new Error('pendiente'); }
+              .then(function (res) {                                         // No borrar si hubo otro guardado durante la subida.
+                if (res !== 'ok' || getMark().dirty) { if (dm0) dm0.textContent = 'Hay cambios sin subir. Espera a que termine la sincronización antes de cerrar sesión.'; throw new Error('pendiente'); }
                 return sb.auth.signOut();
               })
               .then(function () { wipeLocal(); }, function () {});
@@ -657,7 +702,34 @@
   }
 
   var lastUid = null;
+  var syncBar = document.createElement('section');
+  syncBar.id = 'pc-sync-status'; syncBar.hidden = true;
+  syncBar.setAttribute('aria-label', 'Sincronización');
+  syncBar.innerHTML = '<span role="status" aria-live="polite" aria-atomic="true"></span><button type="button" hidden>Reintentar</button>';
+  var top = document.querySelector('.top'); if (top) top.insertAdjacentElement('afterend', syncBar);
+  var syncStyle = document.createElement('style');
+  syncStyle.textContent = '#pc-sync-status{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin:0 0 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;line-height:1.5}#pc-sync-status[hidden]{display:none}#pc-sync-status span{flex:1;min-width:160px}#pc-sync-status button{min-height:48px;min-width:48px;padding:8px 14px;background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:10px;font:inherit}';
+  document.head.appendChild(syncStyle);
+  syncBar.querySelector('button').onclick = function () { if (user) reconcile(); else boot(); };
+  function paintSync() {
+    var m = getMark(), text = '', retry = false;
+    if (user || m.uid) {
+      var count = m.count || (m.dirty ? 1 : 0), changes = count === 1 ? '1 cambio sin subir' : count + ' cambios sin subir';
+      if (status === 'offline' || navigator.onLine === false) text = 'Sin conexión. ' + (m.dirty ? changes + ', guardados en este dispositivo. Se subirán al volver.' : 'Tus datos siguen en este dispositivo.');
+      else if (status === 'error') { text = 'No se pudo sincronizar. ' + (m.dirty ? changes + ', guardados en este dispositivo.' : 'Revisa tu conexión e inténtalo de nuevo.'); retry = true; }
+      else if (status === 'conflict') { text = 'Hay cambios por revisar. Tus cambios siguen en este dispositivo.'; retry = true; }
+      else if (status === 'saving' || m.dirty) text = 'Subiendo… ' + (m.dirty ? changes + ', guardados en este dispositivo.' : 'Comprobando tu cuenta.');
+      else if (status === 'ok') text = mergeNotice || 'En tu cuenta ✓';
+    }
+    syncBar.hidden = !text;
+    var label = syncBar.querySelector('span');
+    // El estado de progreso no interrumpe al lector de pantalla.
+    label.setAttribute('aria-live', status === 'saving' ? 'off' : 'polite');
+    if (label.textContent !== text) label.textContent = text;
+    syncBar.querySelector('button').hidden = !retry;
+  }
   function paint() {
+    if (syncBar) paintSync();
     if (user && consentOK) unlock();
     if ((user && user.id) !== lastUid) { lastUid = user && user.id; nt.err = ''; refreshNotif(); }
     if (!btn) return;
@@ -681,7 +753,7 @@
       if (r.data.session) { if (!user) { user = r.data.session.user; } checkConsent().then(function (ok) { if (ok) { paint(); reconcile(); } }); }
       else accessSheet();
     }).catch(function () {
-      if (getMark().uid) { unlock(); return; }   // ya ingresó antes en este dispositivo: dejar usar sin internet
+      if (getMark().uid) { unlock(); setStatus('offline'); return; }   // dejar usar sin internet y marcar también guardados sin sesión cargada
       show('<h2>Sin conexión</h2><p>Necesitas internet para ingresar la primera vez.</p><button class="pc-b" data-r>Reintentar</button>',
         function (o) { o.querySelector('[data-r]').onclick = boot; });
     });
