@@ -446,7 +446,7 @@
         return false;
       }
       consentOK = true; return true;     // adulto/14+, aprobado o cuenta anterior sin perfil
-    }, function () { return false; });
+    }, function () { if (getMark().uid === user.id) { consentOK = true; return true; } return false; });
   }
   function waitSheet(s, p) {
     lock();
