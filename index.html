@@ -232,7 +232,7 @@ label.f>*:not(span){color:var(--ink);font-weight:400}
 @keyframes pc-sheet-in{from{transform:translateY(12px)}to{transform:translateY(0)}}
 @keyframes pc-sheet-out{to{transform:translateY(8px)}}
 @keyframes pc-saved{from{background-color:var(--surface2);box-shadow:inset 3px 0 var(--accent)}to{background-color:var(--surface);box-shadow:inset 0 0 transparent}}
-@media(max-width:859px){.seg label{min-height:48px;display:flex;align-items:center;justify-content:center}.toast .undo{min-height:44px;min-width:44px}}
+@media(max-width:859px){.seg label{min-height:48px;display:flex;align-items:center;justify-content:center}.toast .undo{min-height:44px;min-width:44px}#toast{bottom:calc(136px + env(safe-area-inset-bottom,0px))}}
 @media(prefers-reduced-motion:reduce){
   .btn,.icon-btn,.row,#coach .spot{transition:none}
   .overlay.pc-enter,.pc-enter>.sheet,.overlay.pc-leave,.pc-leave>.sheet,.pc-saved,#mom-res{animation:none}
@@ -917,7 +917,7 @@ function movList(){
 function vMovs(){
   var h=quickBar()+monthBar()+'<div class="chips" role="group" aria-label="'+esc(t('Filtrar por tipo'))+'">';
   FILTERS.forEach(function(f){h+='<button class="chip" data-a="filter" data-v="'+f[0]+'" aria-pressed="'+(ui.filter===f[0])+'">'+t(f[1])+'</button>';});
-  h+='</div><div style="display:grid;grid-template-columns:2fr 1fr;gap:8px;margin:0 0 10px"><input id="mq" type="search" placeholder="'+esc(t('Buscar en tus movimientos'))+'" aria-label="'+esc(t('Buscar en tus movimientos'))+'" value="'+esc(ui.q||'')+'"><select id="mcat" aria-label="'+esc(t('Categoría'))+'"><option value="">'+esc(t('Todas las categorías'))+'</option>'
+  h+='</div><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;margin:0 0 10px"><input id="mq" type="search" placeholder="'+esc(t('Buscar en tus movimientos'))+'" aria-label="'+esc(t('Buscar en tus movimientos'))+'" value="'+esc(ui.q||'')+'"><select id="mcat" aria-label="'+esc(t('Categoría'))+'"><option value="">'+esc(t('Todas las categorías'))+'</option>'
     +CATS.map(function(c){return '<option value="'+esc(c)+'"'+(ui.fcat===c?' selected':'')+'>'+esc(cname(c))+'</option>';}).join('')+'</select></div>';
   return h+'<div id="mlist">'+movList()+'</div>';
 }
