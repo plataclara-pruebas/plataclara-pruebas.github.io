@@ -1671,7 +1671,13 @@ document.addEventListener('click',function(e){
   else if(a==='new'){ui.sheet=(ui.space==='hogar'&&H.hh)?{kind:'hmove'}:{kind:'move'};render();}
   else if(a==='edit'){ui.sheet={kind:'move',id:id};render();}
   else if(a==='momento'){var mg0=activeGoals(),g0=mg0.filter(function(g){return g.id===id;})[0]||mg0[0];if(!g0){ui.view='ahorros';render();toast('Crea una meta primero para usar Momento Claro.');return;}ui.sheet={kind:'momento',goalId:g0.id};render();}
-  else if(a==='momento-register'){ui.sheet={kind:'move',type:'Gasto',amount:Number(el.dataset.amount)||undefined,desc:el.dataset.desc||'',momento:true};render();}
+  else if(a==='momento-register'){
+    var mf=el.closest('form[data-kind="momento"]'),md=mf&&new FormData(mf),mv=md&&num(md.get('amount'));
+    if(!md)return;
+    if(!(mv>0)&&mf){momStale({target:mf});momErr(mf,true);return;}
+    if(!Number.isFinite(mv)||mv!==Number(el.dataset.amount)||md.get('goalId')!==el.dataset.goal||md.get('desc')!==el.dataset.desc){momStale({target:mf});return;}
+    ui.sheet={kind:'move',type:'Gasto',amount:mv,desc:md.get('desc')||'',momento:true};render();
+  }
   else if(a==='goal-new'){ui.sheet={kind:'goal'};render();}
   else if(a==='admin'){ui.sheet={kind:'admin',noFocus:true};render();admLoad();}
   else if(a==='adm-go'){admGo();}
@@ -1808,8 +1814,8 @@ document.addEventListener('submit',function(e){
     ui.month=rec.date.slice(0,7);msg=t(d.asquick&&!s.id?K('Movimiento y atajo guardados'):K('Movimiento guardado'))+(rec.w&&walletOf(rec.w)?' · '+walletOf(rec.w).name:'');
   }else if(k==='momento'){
     var mg1=activeGoals(),g1=mg1.filter(function(g){return g.id===d.goalId;})[0],m1=num(d.amount);
-    if(!g1){toast('Elige una meta para ver el impacto.');return;}
-    if(!(m1>0)){momErr(f,true);return;}
+    if(!g1){momStale({target:f});toast('Elige una meta para ver el impacto.');return;}
+    if(!(m1>0)||!Number.isFinite(m1)){momStale({target:f});momErr(f,true);return;}
     ui.sheet={kind:'momento',goalId:g1.id,amount:Math.round(m1*100)/100,desc:(d.desc||'').trim().slice(0,80)};render();return;
   }else if(k==='goal'){
     var gr={id:s.id||uid(),name:d.name.trim(),target:num(d.target),initial:num(d.initial),date:d.date||'',cc:validCur(d.cc)?d.cc:S.cc,kind:d.kind==='ext'?'ext':'own',owner:d.kind==='ext'?(d.owner||'').trim().slice(0,60):''};
