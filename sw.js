@@ -1,7 +1,7 @@
 // Plata Clara - service worker
 // Estrategia: red primero (siempre intenta bajar lo último), caché solo si no hay internet.
 const SCOPE = new URL(self.registration.scope).pathname;   // cada sitio (real / pruebas) tiene su propia caché
-const CACHE = 'plata-clara-v22-resumen-limpio-pruebas-' + SCOPE;
+const CACHE = 'plata-clara-v23-beta-sin-diagnostico-' + SCOPE;
 const BASE = ['./', 'index.html', 'config.js', 'sync-model.js', 'cloud.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'notif-icon.png', 'badge.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
@@ -43,12 +43,6 @@ self.addEventListener('push', function (e) {
   var d = {};
   try { d = e.data ? e.data.json() : {}; } catch (err) { d = { body: e.data ? e.data.text() : '' }; }
   e.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) { list.forEach(function (c) { c.postMessage({ type: 'pc-push' }); }); }));
-  // SOLO SITIO DE PRUEBAS: constancia de recepcion para diagnosticar entregas (no envia contenido del aviso).
-  // Incluye navegador (Brave/Chrome/otro) y los ultimos 6 caracteres de la suscripcion para saber que dispositivo recibio.
-  var nav = (function () { try { var b = (self.navigator.userAgentData && self.navigator.userAgentData.brands || []).map(function (x) { return x.brand; }).join(' '); return /Brave/i.test(b) || self.navigator.brave ? 'brave' : /Google Chrome/i.test(b) ? 'chrome' : /Edge/i.test(b) ? 'edge' : /SamsungBrowser/i.test(self.navigator.userAgent) ? 'samsung' : 'otro'; } catch (err) { return 'desconocido'; } })();
-  var sub = self.registration.pushManager.getSubscription().then(function (s) { return s ? s.endpoint.slice(-6) : 'sin-sub'; }, function () { return 'sin-sub'; });
-  var marca = function (paso) { return sub.then(function (fin) { return fetch('https://sqfobtlxvddmijafttog.supabase.co/functions/v1/push-receptor-prueba?d=telefono-' + paso + '-' + encodeURIComponent(d.tag || 'sin-tag') + '-' + nav + '-' + encodeURIComponent(fin), { method: 'POST', body: '' }); }).catch(function () {}); };
-  e.waitUntil(marca('recibido'));
   e.waitUntil(self.registration.showNotification(d.title || 'Plata Clara', {
     body: d.body || '',
     icon: 'notif-icon.png',
@@ -59,7 +53,7 @@ self.addEventListener('push', function (e) {
     tag: d.tag || 'plata-clara',
     renotify: true,
     data: { url: d.url || './#deudas' }
-  }).then(function () { return marca('mostrado'); }, function (err) { return marca('error-' + (err && err.name)); }));
+  }));
 });
 
 self.addEventListener('notificationclick', function (e) {
