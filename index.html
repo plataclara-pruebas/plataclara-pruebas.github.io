@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261123-avisos-v20">
+<meta name="pc-version" content="20261123-ventana-v21">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B45309"><meta name="robots" content="noindex">
@@ -240,7 +240,26 @@ input[aria-invalid="true"]:focus-visible{outline-color:var(--exp)}
 #mom-amt[aria-invalid="true"]{border-color:var(--exp);box-shadow:inset 0 0 0 1px var(--exp)}
 /* Respuesta breve, sin retrasar guardado, foco ni cierre. */
 .btn,.icon-btn,.row{transition:background-color 150ms ease,box-shadow 150ms ease}
-.btn:active,.icon-btn:active,.row:active{box-shadow:inset 0 0 0 2px var(--accent)}
+.btn:active,.icon-btn:active,.row:active{box-shadow:none}
+/* Respuesta táctil propia: elimina el destello nativo, conserva el foco de teclado. */
+button,a,.seg label{-webkit-tap-highlight-color:transparent}
+button,.seg label{touch-action:manipulation;transition:transform 160ms cubic-bezier(.2,.8,.2,1),filter 160ms ease,background-color 160ms ease,box-shadow 160ms ease}
+button:active:not(:disabled),button.pc-press,.seg label:active{transform:scale(.97);filter:brightness(.94)}
+.fab:active:not(:disabled){transform:translateY(1px) scale(.96)}
+button:disabled{cursor:default;transform:none;filter:none}
+@media(hover:hover){.btn:hover:not(:disabled),.icon-btn:hover:not(:disabled){filter:brightness(.96)}}
+.pc-notice{box-sizing:border-box;width:calc(100% - 32px);max-width:400px;max-height:85dvh;overflow:auto;border:1px solid var(--line);border-radius:24px;padding:26px;background:var(--surface);color:var(--ink);box-shadow:0 24px 80px #0003;animation:pc-notice-in 220ms cubic-bezier(.2,.8,.2,1)}
+.pc-notice::backdrop{background:#10251d66;backdrop-filter:blur(4px)}
+.pc-notice-kicker{margin:0 0 10px;color:var(--accent);font-size:12px;letter-spacing:.1em;font-weight:700}
+.pc-notice h2{font-size:24px;line-height:1.2}
+.pc-notice ul{padding-left:20px;margin:20px 0;line-height:1.55;font-size:16px}
+.pc-notice li+li{margin-top:10px}
+.pc-notice>.btn{width:100%;min-height:48px}
+.pc-notice p:not(.pc-notice-kicker){line-height:1.5}
+.pc-notice-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.pc-notice-actions button{flex:1;min-height:48px}
+@keyframes pc-notice-in{from{opacity:0;transform:translateY(12px) scale(.97)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){button,.seg label{transition:none}button:active:not(:disabled),button.pc-press,.seg label:active,.fab:active:not(:disabled){transform:none}.pc-notice{animation:none}}
 .overlay.pc-enter{animation:pc-fade-in 180ms ease-out}
 .pc-enter>.sheet{animation:pc-sheet-in 180ms ease-out}
 .overlay.pc-leave{pointer-events:none;animation:pc-fade-out 150ms ease-in forwards}
@@ -903,17 +922,25 @@ function smallExpensesHTML(){
 }
 
 /* Cambiar id y notas juntos cuando se prepare una nueva entrega. Solo anunciar funciones incluidas. */
-var PC_RELEASE={id:'prioridades-2026-11-23-avisos20',title:'Más claridad para tus gastos',notes:[
-  'Registra un ingreso o un gasto directamente desde Resumen.',
-  'Consulta los gastos del mes y distingue el saldo actual de tus billeteras.',
-  'Elige un monto máximo y descubre cuánto suman tus gastos pequeños del mes.',
-  'Abre cada gasto incluido para revisarlo o corregirlo.',
-  'Al abrir Nuevo, el teclado aparece solo cuando tocas un campo.'
+var PC_RELEASE={id:'prioridades-2026-11-23-ventana21',title:'Más cómodo al usarlo',notes:[
+  'Novedades breves: al cerrarlas, no vuelven a aparecer en esta versión.',
+  'Botones con respuesta suave al toque, sin destellos celestes.',
+  'Gastos pequeños más claros y teclado solo cuando tocas el monto.'
 ]};
-function releaseHTML(){
-  var seen=false;try{seen=localStorage.getItem('pc-release-seen')===PC_RELEASE.id;}catch(e){}
-  return '<section class="card" style="margin:0 0 12px" aria-labelledby="release-title"><details'+(!seen?' open':'')+'><summary id="release-title" style="min-height:48px;cursor:pointer;font-weight:700">'+t('Novedades de Plata Clara')+(!seen?' · '+t('Nueva actualización'):'')+'</summary><h3>'+t(PC_RELEASE.title)+'</h3><ul>'+PC_RELEASE.notes.map(function(note){return '<li style="margin-bottom:8px">'+esc(t(note))+'</li>';}).join('')+'</ul><p class="note">'+t('Estas novedades corresponden a la versión que estás usando.')+'</p>'+(!seen?'<button class="btn alt" data-a="release-seen">'+t('Entendido')+'</button>':'')+'<div style="margin-top:12px"><button type="button" class="btn alt" data-pc-check>Buscar actualizaciones</button><p class="note" id="pc-version-status" role="status">Versión 23/11 · avisos v20</p></div></details></section>';
+var releaseDismissed=false;
+function showRelease(){
+  if(releaseDismissed||document.getElementById('pc-release-dialog')||document.getElementById('pc-ov')||document.getElementById('coach')||ui.sheet||document.documentElement.classList.contains('pc-lock')||document.querySelector('dialog[open]'))return;
+  try{if(localStorage.getItem('pc-release-seen')===PC_RELEASE.id)return;}catch(e){}
+  var d=document.createElement('dialog');d.id='pc-release-dialog';d.className='pc-notice';d.setAttribute('aria-labelledby','pc-release-heading');
+  d.innerHTML='<p class="pc-notice-kicker">'+t('NUEVA ACTUALIZACIÓN')+'</p><h2 id="pc-release-heading">'+esc(t(PC_RELEASE.title))+'</h2><ul>'+PC_RELEASE.notes.map(function(n){return '<li>'+esc(t(n))+'</li>';}).join('')+'</ul><button type="button" class="btn" data-release-close>'+t('Entendido, continuar')+'</button>';
+  function dismiss(){releaseDismissed=true;try{localStorage.setItem('pc-release-seen',PC_RELEASE.id);}catch(e){}d.close();d.remove();}
+  d.querySelector('button').onclick=dismiss;d.addEventListener('cancel',function(e){e.preventDefault();dismiss();});
+  document.body.appendChild(d);d.showModal();
 }
+document.addEventListener('pc-render',function(){setTimeout(showRelease,200);});
+var releaseObserver=new MutationObserver(function(records){if(records.some(function(r){return Array.from(r.removedNodes).some(function(n){return n.id==='pc-ov'||n.id==='coach';});}))setTimeout(showRelease,250);});
+releaseObserver.observe(document.body,{childList:true});
+function releaseHTML(){return '';}
 function vResumen(){
   var k=ui.month,inc=sum(k,'Ingreso'),gas=sum(k,'Gasto');
   var wsR=wallets(S.cc),selW=ui.wal?walletOf(ui.wal):null,balR=selW?wBal(selW):wsR.reduce(function(a,w){return a+wBal(w);},0);
@@ -1472,7 +1499,7 @@ function sheetHTML(){
     var ln='';LANGS.forEach(function(l){if(l.c===LANG)ln=l.n;});
     h='<h2>'+t('Ajustes')+'</h2><button class="btn alt" style="width:100%;text-align:left" data-a="region">'+t('Idioma')+': '+ln+'</button>'
       +'<label class="f full" style="margin-top:12px"><span>'+t('Moneda que quieres ver')+'</span><select id="r-base">'+curOptions(S.cc)+'</select></label>'
-      +'<p class="note">'+t('Cada moneda se muestra por separado: no se convierte nada. Elige cuál quieres ver.')+'</p>'
+      +'<p class="note">'+t('Cada moneda se muestra por separado: no se convierte nada. Elige cuál quieres ver.')+'</p><button type="button" class="btn alt" data-pc-check>Buscar actualizaciones</button><p class="note" id="pc-version-status" role="status">Versión de pruebas · v21</p>'
       +featuresBlock()+backupBlock()+'<div class="foot"><button class="btn alt" data-a="loaddemo">'+t('Cargar datos de ejemplo')+'</button><button class="btn danger" data-a="clearall">'+t('Borrar todo y empezar')+'</button></div>'
       +'<p class="note">'+t('Tus datos se guardan solo en este dispositivo y en este navegador.')+'</p><div class="foot"><button class="btn grow" data-a="close">'+t('Listo')+'</button></div>';
   }
@@ -1848,6 +1875,14 @@ function unlockAmount(e){
 document.addEventListener('pointerdown',unlockAmount,true);
 document.addEventListener('click',unlockAmount,true); /* activación por lector de pantalla */
 document.addEventListener('keydown',unlockAmount,true);
+var pressedButton=null;
+function clearButtonPress(){if(pressedButton)pressedButton.classList.remove('pc-press');pressedButton=null;}
+document.addEventListener('pointerdown',function(e){var b=e.target.closest&&e.target.closest('button:not(:disabled)');if(b){clearButtonPress();pressedButton=b;b.classList.add('pc-press');}},true);
+['pointerup','pointercancel'].forEach(function(name){document.addEventListener(name,clearButtonPress,true);});
+window.addEventListener('blur',clearButtonPress);
+document.addEventListener('keydown',function(e){if((e.key===' '||e.key==='Enter')&&e.target.matches('button:not(:disabled)'))e.target.classList.add('pc-press');});
+document.addEventListener('keyup',function(e){if(e.target.classList)e.target.classList.remove('pc-press');});
+document.addEventListener('focusout',function(e){if(e.target.classList)e.target.classList.remove('pc-press');});
 
 /* Monto vacío o cero: error junto al campo, visible también sobre el teclado. */
 function amtErr(f,on){
@@ -2041,21 +2076,15 @@ render();
   var marcar=function(){used=true;};
   ['pointerdown','keydown','input'].forEach(function(ev){document.addEventListener(ev,marcar,{capture:true,passive:true});});
   function recargar(){if(reloaded)return;reloaded=true;location.reload();}
+  var availableVersion='worker',dismissedVersion='';
   function mostrarBarra(){
-    if(bar)return;
-    var st=document.createElement('style');
-    st.textContent='.pc-upd{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 12px);z-index:9999;display:flex;align-items:center;gap:8px;padding:8px 8px 8px 16px;border-radius:14px;background:var(--accent,#0E6B50);color:var(--accent-ink,#fff);box-shadow:0 6px 24px rgba(0,0,0,.25);font:600 15px/1.35 var(--f-body,system-ui,sans-serif);max-width:520px;margin:0 auto}'
-      +'.pc-upd span{flex:1;min-width:0}'
-      +'.pc-upd button{min-height:48px;border:0;border-radius:10px;font:inherit;cursor:pointer}'
-      +'.pc-upd .pc-upd-si{padding:0 16px;background:var(--accent-ink,#fff);color:var(--accent,#0E6B50);font-weight:700}'
-      +'.pc-upd .pc-upd-no{min-width:48px;background:transparent;color:inherit;font-size:22px;line-height:1}';
-    document.head.appendChild(st);
-    bar=document.createElement('div');bar.className='pc-upd';bar.setAttribute('role','status');bar.setAttribute('aria-live','polite');
-    var msg=document.createElement('span');msg.textContent=tx('Hay una versión nueva de Plata Clara.');
-    var si=document.createElement('button');si.type='button';si.className='pc-upd-si';si.textContent=tx('Actualizar');si.onclick=recargar;
-    var no=document.createElement('button');no.type='button';no.className='pc-upd-no';no.textContent='×';no.setAttribute('aria-label',tx('Cerrar aviso'));
-    no.onclick=function(){bar.remove();bar=null;};
-    bar.appendChild(msg);bar.appendChild(si);bar.appendChild(no);document.body.appendChild(bar);
+    if(bar||dismissedVersion===availableVersion)return;
+    if(document.querySelector('dialog[open]'))return;
+    bar=document.createElement('dialog');bar.className='pc-notice pc-update-dialog';bar.setAttribute('aria-labelledby','pc-update-heading');
+    bar.innerHTML='<p class="pc-notice-kicker">PLATA CLARA</p><h2 id="pc-update-heading">Nueva versión disponible</h2><p>Actualiza para ver las mejoras. Si estás completando un formulario, puedes hacerlo después.</p><div class="pc-notice-actions"><button type="button" class="btn alt pc-upd-no">Después</button><button type="button" class="btn pc-upd-si">Actualizar</button></div>';
+    function dismiss(){dismissedVersion=availableVersion;bar.close();bar.remove();bar=null;}
+    bar.querySelector('.pc-upd-si').onclick=recargar;bar.querySelector('.pc-upd-no').onclick=dismiss;
+    bar.addEventListener('cancel',function(e){e.preventDefault();dismiss();});document.body.appendChild(bar);bar.showModal();
   }
   window.__pcMostrarActualizacion=mostrarBarra;
   var checking=false;
@@ -2069,7 +2098,7 @@ render();
       var doc=new DOMParser().parseFromString(await response.text(),'text/html');
       var remote=doc.querySelector('meta[name="pc-version"]'),local=document.querySelector('meta[name="pc-version"]');
       if(!remote||!local)throw Error('VERSION');
-      if(remote.content!==local.content){mostrarBarra();if(status)status.textContent='Hay una actualización disponible.';}
+      if(remote.content!==local.content){availableVersion=remote.content;mostrarBarra();if(status)status.textContent='Hay una actualización disponible.';}
       else if(manual&&status)status.textContent='Ya tienes la versión más reciente.';
     }catch(e){if(manual&&status)status.textContent='No se pudo comprobar. Revisa tu conexión y vuelve a intentar.';}
     finally{checking=false;}
