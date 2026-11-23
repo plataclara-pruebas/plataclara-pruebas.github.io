@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
+<meta name="pc-version" content="20261123-avisos-v20">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B45309"><meta name="robots" content="noindex">
@@ -885,13 +886,43 @@ function budgetRows(k,onlyBudgeted){
   return out;
 }
 
+
+/* Revisión mensual: misma moneda, billetera y periodo visibles. No modifica movimientos. */
+function smallExpenses(moves,month,cc,wallet,limit){
+  return moves.filter(function(m){return m.type==='Gasto'&&mc(m)===cc&&(!wallet||m.w===wallet)&&String(m.date).slice(0,7)===month&&Number.isFinite(m.amount)&&m.amount>0&&m.amount<=limit;});
+}
+function smallExpensesHTML(){
+  var limit=ui.smallLimit&&ui.smallLimit[S.cc],list=limit?smallExpenses(S.moves,ui.month,S.cc,ui.wal,limit):[];
+  var total=list.reduce(function(a,m){return a+Math.round(m.amount*100);},0)/100;
+  var h='<section class="card" style="margin-top:12px" aria-labelledby="small-title"><h2 id="small-title">'+t('Tus gastos pequeños')+'</h2><p class="note">'+t('Elige hasta qué monto consideras pequeño un gasto. Verás cuánto suman en el mes y la billetera seleccionados. Un gasto pequeño también puede ser necesario.')+'</p>';
+  h+='<form data-kind="small-expenses"><label class="f" for="small-limit"><span>'+t('Monto máximo por gasto')+' ('+esc(curSym(S.cc))+')</span><input id="small-limit" name="limit" inputmode="decimal" required value="'+(limit||'')+'" placeholder="0.00" aria-describedby="small-error"><span class="f-err" id="small-error" role="alert"></span></label><button class="btn alt" style="margin-top:8px" type="submit">'+t('Revisar gastos pequeños')+'</button></form>';
+  if(limit){h+='<p role="status">'+list.length+' '+t('gastos registrados')+' · <b class="num">'+money(total)+'</b></p>';
+    h+=list.length?'<details><summary style="min-height:48px;cursor:pointer">'+t('Ver los gastos incluidos')+'</summary><div class="list">'+list.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).map(function(m){return '<div><p class="note">'+esc(dateLong(m.date))+'</p>'+moveRow(m)+'</div>';}).join('')+'</div></details>':'<p class="note">'+t('No hay gastos registrados dentro de este monto en el periodo seleccionado.')+'</p>';
+  }
+  return h+'</section>';
+}
+
+/* Cambiar id y notas juntos cuando se prepare una nueva entrega. Solo anunciar funciones incluidas. */
+var PC_RELEASE={id:'prioridades-2026-11-23-avisos20',title:'Más claridad para tus gastos',notes:[
+  'Registra un ingreso o un gasto directamente desde Resumen.',
+  'Consulta los gastos del mes y distingue el saldo actual de tus billeteras.',
+  'Elige un monto máximo y descubre cuánto suman tus gastos pequeños del mes.',
+  'Abre cada gasto incluido para revisarlo o corregirlo.',
+  'Al abrir Nuevo, el teclado aparece solo cuando tocas un campo.'
+]};
+function releaseHTML(){
+  var seen=false;try{seen=localStorage.getItem('pc-release-seen')===PC_RELEASE.id;}catch(e){}
+  return '<section class="card" style="margin:0 0 12px" aria-labelledby="release-title"><details'+(!seen?' open':'')+'><summary id="release-title" style="min-height:48px;cursor:pointer;font-weight:700">'+t('Novedades de Plata Clara')+(!seen?' · '+t('Nueva actualización'):'')+'</summary><h3>'+t(PC_RELEASE.title)+'</h3><ul>'+PC_RELEASE.notes.map(function(note){return '<li style="margin-bottom:8px">'+esc(t(note))+'</li>';}).join('')+'</ul><p class="note">'+t('Estas novedades corresponden a la versión que estás usando.')+'</p>'+(!seen?'<button class="btn alt" data-a="release-seen">'+t('Entendido')+'</button>':'')+'<div style="margin-top:12px"><button type="button" class="btn alt" data-pc-check>Buscar actualizaciones</button><p class="note" id="pc-version-status" role="status">Versión 23/11 · avisos v20</p></div></details></section>';
+}
 function vResumen(){
   var k=ui.month,inc=sum(k,'Ingreso'),gas=sum(k,'Gasto');
   var wsR=wallets(S.cc),selW=ui.wal?walletOf(ui.wal):null,balR=selW?wBal(selW):wsR.reduce(function(a,w){return a+wBal(w);},0);
-  var h=alertsHTML()+budgetAlertHTML()+owedAlertHTML()+quickBar()+monthBar();
+  var h=releaseHTML()+alertsHTML()+budgetAlertHTML()+owedAlertHTML()+'<div class="actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"><button class="btn" data-a="new-expense">'+t('Registrar gasto')+'</button><button class="btn alt" data-a="new-income">'+t('Registrar ingreso')+'</button></div>'+quickBar()+monthBar();
   h+='<div class="grid stats summary-stats">'
-    +statTile(t('Mis billeteras'),money(balR),selW?esc(selW.name):t('Suma de todas tus billeteras'),balR<0?'c-exp':'',true)
+    +statTile(t('Mis billeteras'),money(balR),selW?esc(selW.name):t('Suma de todas tus billeteras')+' · '+t('Saldo actual según tus registros; no depende del mes seleccionado.'),balR<0?'c-exp':'',true)
     +statTile(t('Ingresos'),money(inc),t('Lo que entró este mes'),'c-inc')+'</div>';
+  h+='<div class="grid stats" style="margin-top:12px">'+statTile(t('Gastos'),money(gas),t('Lo que gastaste este mes'),'c-exp')+'</div><p class="note">'+t('Los ingresos y gastos corresponden al mes seleccionado. Los movimientos que no anotes no se reflejan en el saldo.')+'</p>';
+  h+=smallExpensesHTML();
   h+=ritmoHTML();
   h+=compareHTML(k,gas);
   h+=walletsCard();
@@ -1288,11 +1319,11 @@ function sheetHTML(){
     var one=(m.type==='Ahorro'||m.type==='Deuda'),ttl=one?(m.type==='Ahorro'?(s.id?K('Editar ahorro'):K('Nuevo ahorro')):(s.id?K('Editar pago de deuda'):K('Nuevo pago de deuda'))):(s.id?K('Editar movimiento'):K('Nuevo movimiento'));
     h='<h2>'+t(ttl)+'</h2><form data-kind="move">'+(one?'<input type="hidden" name="type" value="'+m.type+'">':'<div class="seg" style="grid-template-columns:repeat(2,1fr)" role="radiogroup" aria-label="'+esc(t('Tipo'))+'">'
       +['Ingreso','Gasto'].map(function(tp){return '<div><input type="radio" name="type" id="t-'+tp+'" value="'+tp+'"'+(m.type===tp?' checked':'')+'><label for="t-'+tp+'">'+t(tp)+'</label></div>';}).join('')+'</div>')
-      +'<div class="fgrid" style="margin-top:14px"><div class="f"><label for="f-amt" data-amtl>'+t('Monto ({c})',{c:esc(curSym((walletOf(m.w)||mainWallet(m.cc||S.cc)||{}).cc||m.cc||S.cc))})+'</label><input id="f-amt" name="amount" inputmode="decimal" aria-required="true" aria-describedby="f-amt-err" placeholder="0.00" value="'+(m.amount!=null?m.amount:'')+'"><span class="f-err" id="f-amt-err"></span></div>'
+      +'<div class="fgrid" style="margin-top:14px"><div class="f"><label for="f-amt" data-amtl>'+t('Monto ({c})',{c:esc(curSym((walletOf(m.w)||mainWallet(m.cc||S.cc)||{}).cc||m.cc||S.cc))})+'</label><input id="f-amt" name="amount" inputmode="decimal" readonly data-touch-edit aria-required="true" aria-describedby="f-amt-err" placeholder="0.00" value="'+(m.amount!=null?m.amount:'')+'"><span class="f-err" id="f-amt-err"></span></div>'
       +'<label class="f"><span>'+t('Fecha')+'</span><input id="f-date" type="date" name="date" required value="'+m.date+'"></label>'
       +walletSel(m.w,m.cc)
       +'<div class="full" id="dyn" style="display:contents">'+moveFields(m.type,m)+'</div>'
-      +'<label class="f full"><span>'+t('Descripción')+'</span><input id="f-desc" name="desc" placeholder="'+esc(t('Ej. Desayuno, pago semanal'))+'" value="'+esc(m.desc||'')+'"></label>'
+      +'<label class="f full"><span>'+t('Descripción (opcional)')+'</span><input id="f-desc" name="desc" placeholder="'+esc(t('Ej. Desayuno, pago semanal'))+'" value="'+esc(m.desc||'')+'"></label>'
       +'</div>'
       +'<div class="foot"><button class="btn grow" type="submit">'+t('Guardar')+'</button><button class="btn alt" type="button" data-a="close">'+t('Cancelar')+'</button>'+(s.id?'<button class="btn danger" type="button" data-a="del">'+t('Eliminar')+'</button>':'')+'</div></form>';
   }else if(s.kind==='momento'){
@@ -1472,7 +1503,7 @@ function render(){
     ghost.querySelectorAll('[id]').forEach(function(n){n.removeAttribute('id');});
     document.body.appendChild(ghost);setTimeout(function(){ghost.remove();},170);
   }
-  if(ui.sheet){sh.innerHTML=sheetHTML();var f=sh.querySelector('input:not([type=radio]),select');if(f&&!ui.sheet.noFocus)f.focus();if(ui.sheet.kind==='copytext'){var ta=sh.querySelector('textarea');if(ta){ta.focus();ta.select();}}}else sh.innerHTML='';
+  if(ui.sheet){sh.innerHTML=sheetHTML();var isMove=ui.sheet.kind==='move'||ui.sheet.kind==='hmove';var f=sh.querySelector(isMove?'h2':'input:not([type=radio]),select');if(f&&!ui.sheet.noFocus){if(isMove)f.setAttribute('tabindex','-1');try{f.focus({preventScroll:true});}catch(e){f.focus();}}if(ui.sheet.kind==='copytext'){var ta=sh.querySelector('textarea');if(ta){ta.focus();ta.select();}}}else sh.innerHTML='';
   sh.dataset.kind=nextKind;
   if(nextKind&&nextKind!==prevKind&&sh.firstElementChild)sh.firstElementChild.classList.add('pc-enter');
   if(ui.savedMove){document.querySelectorAll('#view [data-a="edit"]').forEach(function(n){if(n.dataset.id===ui.savedMove)n.classList.add('pc-saved');});ui.savedMove=null;}
@@ -1672,6 +1703,8 @@ document.addEventListener('click',function(e){
   else if(a==='mprev'){ui.month=shiftMonth(ui.month,-1);render();}
   else if(a==='mnext'){ui.month=shiftMonth(ui.month,1);render();}
   else if(a==='filter'){ui.filter=el.dataset.v;render();}
+  else if(a==='release-seen'){try{localStorage.setItem('pc-release-seen',PC_RELEASE.id);}catch(e){}render();}
+  else if(a==='new-expense'||a==='new-income'){ui.sheet={kind:'move',type:a==='new-income'?'Ingreso':'Gasto'};render();}
   else if(a==='new'){ui.sheet=(ui.space==='hogar'&&H.hh)?{kind:'hmove'}:{kind:'move'};render();}
   else if(a==='edit'){ui.sheet={kind:'move',id:id};render();}
   else if(a==='momento'){var mg0=activeGoals(),g0=mg0.filter(function(g){return g.id===id;})[0]||mg0[0];if(!g0){ui.view='ahorros';render();toast('Crea una meta primero para usar Mi Balance.');return;}ui.sheet={kind:'momento',goalId:g0.id};render();}
@@ -1803,6 +1836,19 @@ function fitSheetViewport(){
 }
 if(window.visualViewport){window.visualViewport.addEventListener('resize',fitSheetViewport);window.visualViewport.addEventListener('scroll',fitSheetViewport);fitSheetViewport();}
 document.addEventListener('focusin',function(e){if(e.target.matches('input,select,textarea'))keepSheetFieldVisible(e.target);});
+/* El navegador no puede abrir el teclado por un enfoque automático del monto.
+   Se habilita con una interacción explícita; Tab y escritura física siguen disponibles. */
+function unlockAmount(e){
+  var a=e.target.closest&&e.target.closest('[data-touch-edit]');
+  if(!a&&e.target.closest&&e.target.closest('label[for="f-amt"]'))a=document.getElementById('f-amt');
+  if(!a||!a.readOnly)return;
+  if(e.type==='keydown'&&(e.ctrlKey||e.metaKey||e.altKey||!(e.key.length===1||e.key==='Enter'||e.key==='Backspace'||e.key==='Delete')))return;
+  a.readOnly=false;
+}
+document.addEventListener('pointerdown',unlockAmount,true);
+document.addEventListener('click',unlockAmount,true); /* activación por lector de pantalla */
+document.addEventListener('keydown',unlockAmount,true);
+
 /* Monto vacío o cero: error junto al campo, visible también sobre el teclado. */
 function amtErr(f,on){
   var a=f&&f.querySelector('#f-amt'),e=f&&f.querySelector('#f-amt-err');if(!a||!e)return;
@@ -1817,7 +1863,11 @@ document.addEventListener('input',function(e){var a=e.target;if(a&&a.id==='f-amt
 document.addEventListener('submit',function(e){
   e.preventDefault();
   var f=e.target,k=f.dataset.kind,d=Object.fromEntries(new FormData(f).entries()),s=ui.sheet,msg='';
-  if(k==='move'){
+  if(k==='small-expenses'){
+    var limit=num(d.limit),inp=f.querySelector('[name="limit"]'),err=f.querySelector('#small-error');
+    if(!Number.isFinite(limit)||limit<0.01||limit>999999999){err.textContent=t('Escribe un monto entre 0.01 y 999999999.');inp.setAttribute('aria-invalid','true');inp.focus();return;}
+    ui.smallLimit=ui.smallLimit||{};ui.smallLimit[S.cc]=Math.round(limit*100)/100;render();return;
+  }else if(k==='move'){
     var amt=num(d.amount);if(amt<=0){amtErr(f,true);return;}amtErr(f,false);
     var rec={id:s.id||uid(),date:d.date,type:d.type,desc:(d.desc||'').trim(),amount:Math.round(amt*100)/100,note:(d.note!=null?(d.note||'').trim():((s.id&&(S.moves.filter(function(x){return x.id===s.id;})[0]||{}).note)||'')),cat:d.type==='Gasto'||d.type==='Ingreso'?(d.cat||'Otro'):''};
     if(d.type==='Ahorro'&&d.goalId)rec.goalId=d.goalId;
@@ -2007,10 +2057,30 @@ render();
     no.onclick=function(){bar.remove();bar=null;};
     bar.appendChild(msg);bar.appendChild(si);bar.appendChild(no);document.body.appendChild(bar);
   }
-  window.__pcMostrarActualizacion=mostrarBarra;   /* para pruebas */
+  window.__pcMostrarActualizacion=mostrarBarra;
+  var checking=false;
+  async function comprobarVersion(manual){
+    if(checking)return;checking=true;
+    var status=document.getElementById('pc-version-status');
+    if(manual&&status)status.textContent='Buscando actualizaciones…';
+    try{
+      var url=new URL('index.html',location.href);url.searchParams.set('pc-check',Date.now());url.hash='';
+      var response=await fetch(url.href,{cache:'no-store'});if(!response.ok)throw Error('HTTP');
+      var doc=new DOMParser().parseFromString(await response.text(),'text/html');
+      var remote=doc.querySelector('meta[name="pc-version"]'),local=document.querySelector('meta[name="pc-version"]');
+      if(!remote||!local)throw Error('VERSION');
+      if(remote.content!==local.content){mostrarBarra();if(status)status.textContent='Hay una actualización disponible.';}
+      else if(manual&&status)status.textContent='Ya tienes la versión más reciente.';
+    }catch(e){if(manual&&status)status.textContent='No se pudo comprobar. Revisa tu conexión y vuelve a intentar.';}
+    finally{checking=false;}
+  }
+  document.addEventListener('click',function(e){if(e.target.closest('[data-pc-check]'))comprobarVersion(true);});
+  document.addEventListener('visibilitychange',function(){if(!document.hidden)comprobarVersion(false);});
+  window.addEventListener('online',function(){comprobarVersion(false);});
+  comprobarVersion(false);
   navigator.serviceWorker.addEventListener('controllerchange',function(){
     if(!hadController){hadController=true;return;}
-    if(!used&&performance.now()<8000)recargar();else mostrarBarra();
+    mostrarBarra();
   });
   navigator.serviceWorker.register('sw.js').then(function(reg){
     reg.update();
