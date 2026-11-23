@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261123-ventana-v21">
+<meta name="pc-version" content="20261123-resumen-v22">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B45309"><meta name="robots" content="noindex">
@@ -92,6 +92,11 @@ h1,h2,h3{font-family:var(--f-display);margin:0;letter-spacing:-.01em;text-wrap:b
 .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
 @media (min-width:700px){.stats{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .stats.summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+.summary-stats>.hero{grid-column:1/-1}
+.summary-help{margin:10px 0 0;color:var(--muted);font-size:14px}
+.summary-help>summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+.section-summary{font-family:var(--f-display);font-size:18px;font-weight:700;min-height:44px;cursor:pointer}
+.section-summary+ .note{margin-bottom:14px}
 .card.wallet-summary{margin-top:12px;padding:12px 16px}
 .card.wallet-summary h2{margin-bottom:6px;align-items:center;flex-wrap:wrap}
 .wallet-summary .wallet-summary-row{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0}
@@ -419,7 +424,7 @@ Object.keys(N).forEach(function(l){DICT[l]=DICT[l]||{};for(var k in N[l])DICT[l]
 Object.keys(N).forEach(function(l){DICT[l]=DICT[l]||{};for(var k in N[l])DICT[l][k]=N[l][k];});})();
 (function(){var N={"en": {"Principal": "Main", "Usar como billetera principal": "Use as main wallet", "Es mi billetera de efectivo": "This is my cash wallet", "Saldo": "Balance", "Apartado": "Set aside", "Saldo menos lo apartado para ahorros.": "Balance minus what is set aside for savings.", "Retirar o depositar efectivo": "Withdraw or deposit cash", "Operación": "Operation", "Retirar efectivo": "Withdraw cash", "Depositar efectivo": "Deposit cash", "Billetera digital": "Digital wallet", "Comisión (opcional)": "Fee (optional)", "Retiro": "Withdrawal", "Depósito": "Deposit", "Comisión de retiro": "Withdrawal fee", "Comisión de depósito": "Deposit fee", "Elige una billetera digital.": "Choose a digital wallet.", "Operación guardada": "Operation saved"}, "pt": {"Principal": "Principal", "Usar como billetera principal": "Usar como carteira principal", "Es mi billetera de efectivo": "É minha carteira de dinheiro", "Saldo": "Saldo", "Apartado": "Reservado", "Saldo menos lo apartado para ahorros.": "Saldo menos o que está reservado para poupança.", "Retirar o depositar efectivo": "Sacar ou depositar dinheiro", "Operación": "Operação", "Retirar efectivo": "Sacar dinheiro", "Depositar efectivo": "Depositar dinheiro", "Billetera digital": "Carteira digital", "Comisión (opcional)": "Taxa (opcional)", "Retiro": "Saque", "Depósito": "Depósito", "Comisión de retiro": "Taxa de saque", "Comisión de depósito": "Taxa de depósito", "Elige una billetera digital.": "Escolha uma carteira digital.", "Operación guardada": "Operação salva"}, "fr": {"Principal": "Principale", "Usar como billetera principal": "Utiliser comme portefeuille principal", "Es mi billetera de efectivo": "C'est mon portefeuille d'espèces", "Saldo": "Solde", "Apartado": "Mis de côté", "Saldo menos lo apartado para ahorros.": "Solde moins ce qui est mis de côté pour l'épargne.", "Retirar o depositar efectivo": "Retirer ou déposer des espèces", "Operación": "Opération", "Retirar efectivo": "Retirer des espèces", "Depositar efectivo": "Déposer des espèces", "Billetera digital": "Portefeuille numérique", "Comisión (opcional)": "Frais (facultatif)", "Retiro": "Retrait", "Depósito": "Dépôt", "Comisión de retiro": "Frais de retrait", "Comisión de depósito": "Frais de dépôt", "Elige una billetera digital.": "Choisissez un portefeuille numérique.", "Operación guardada": "Opération enregistrée"}, "de": {"Principal": "Hauptkonto", "Usar como billetera principal": "Als Haupt-Geldbörse verwenden", "Es mi billetera de efectivo": "Das ist meine Bargeld-Geldbörse", "Saldo": "Saldo", "Apartado": "Zurückgelegt", "Saldo menos lo apartado para ahorros.": "Saldo minus das, was für Ersparnisse zurückgelegt ist.", "Retirar o depositar efectivo": "Bargeld abheben oder einzahlen", "Operación": "Vorgang", "Retirar efectivo": "Bargeld abheben", "Depositar efectivo": "Bargeld einzahlen", "Billetera digital": "Digitale Geldbörse", "Comisión (opcional)": "Gebühr (optional)", "Retiro": "Abhebung", "Depósito": "Einzahlung", "Comisión de retiro": "Abhebungsgebühr", "Comisión de depósito": "Einzahlungsgebühr", "Elige una billetera digital.": "Wähle eine digitale Geldbörse.", "Operación guardada": "Vorgang gespeichert"}, "it": {"Principal": "Principale", "Usar como billetera principal": "Usa come portafoglio principale", "Es mi billetera de efectivo": "È il mio portafoglio contanti", "Saldo": "Saldo", "Apartado": "Accantonato", "Saldo menos lo apartado para ahorros.": "Saldo meno quanto accantonato per i risparmi.", "Retirar o depositar efectivo": "Preleva o versa contanti", "Operación": "Operazione", "Retirar efectivo": "Preleva contanti", "Depositar efectivo": "Versa contanti", "Billetera digital": "Portafoglio digitale", "Comisión (opcional)": "Commissione (facoltativa)", "Retiro": "Prelievo", "Depósito": "Versamento", "Comisión de retiro": "Commissione di prelievo", "Comisión de depósito": "Commissione di versamento", "Elige una billetera digital.": "Scegli un portafoglio digitale.", "Operación guardada": "Operazione salvata"}};
 Object.keys(N).forEach(function(l){DICT[l]=DICT[l]||{};for(var k in N[l])DICT[l][k]=N[l][k];});})();
-(function(){var N={"en": {"Suma de todas tus billeteras": "Sum of all your wallets", "Más opciones": "More options", "Tu dinero en billeteras": "Your money in wallets", "Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.": "Here you see how much you have in total across your wallets. Pick one above to see only that one."}, "pt": {"Suma de todas tus billeteras": "Soma de todas as suas carteiras", "Más opciones": "Mais opções", "Tu dinero en billeteras": "Seu dinheiro nas carteiras", "Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.": "Aqui você vê quanto tem no total nas suas carteiras. Escolha uma acima para ver só ela."}, "fr": {"Suma de todas tus billeteras": "Somme de tous vos portefeuilles", "Más opciones": "Plus d'options", "Tu dinero en billeteras": "Votre argent en portefeuilles", "Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.": "Vous voyez ici le total de vos portefeuilles. Choisissez-en un en haut pour ne voir que celui-ci."}, "de": {"Suma de todas tus billeteras": "Summe aller deiner Geldbörsen", "Más opciones": "Weitere Optionen", "Tu dinero en billeteras": "Dein Geld in Geldbörsen", "Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.": "Hier siehst du, wie viel du insgesamt in deinen Geldbörsen hast. Wähle oben eine, um nur diese zu sehen."}, "it": {"Suma de todas tus billeteras": "Somma di tutti i tuoi portafogli", "Más opciones": "Altre opzioni", "Tu dinero en billeteras": "I tuoi soldi nei portafogli", "Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.": "Qui vedi quanto hai in totale nei tuoi portafogli. Sceglierne uno in alto per vedere solo quello."}};
+(function(){var N={"en": {"Suma de todas tus billeteras": "Sum of all your wallets", "Más opciones": "More options", "Tu dinero en billeteras": "Your money in wallets", "Aquí ves la suma de tus billeteras. Puedes revisarlas en Billeteras.": "Here you see how much you have in total across your wallets. Pick one above to see only that one."}, "pt": {"Suma de todas tus billeteras": "Soma de todas as suas carteiras", "Más opciones": "Mais opções", "Tu dinero en billeteras": "Seu dinheiro nas carteiras", "Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.": "Aqui você vê quanto tem no total nas suas carteiras. Escolha uma acima para ver só ela."}, "fr": {"Suma de todas tus billeteras": "Somme de tous vos portefeuilles", "Más opciones": "Plus d'options", "Tu dinero en billeteras": "Votre argent en portefeuilles", "Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.": "Vous voyez ici le total de vos portefeuilles. Choisissez-en un en haut pour ne voir que celui-ci."}, "de": {"Suma de todas tus billeteras": "Summe aller deiner Geldbörsen", "Más opciones": "Weitere Optionen", "Tu dinero en billeteras": "Dein Geld in Geldbörsen", "Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.": "Hier siehst du, wie viel du insgesamt in deinen Geldbörsen hast. Wähle oben eine, um nur diese zu sehen."}, "it": {"Suma de todas tus billeteras": "Somma di tutti i tuoi portafogli", "Más opciones": "Altre opzioni", "Tu dinero en billeteras": "I tuoi soldi nei portafogli", "Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.": "Qui vedi quanto hai in totale nei tuoi portafogli. Sceglierne uno in alto per vedere solo quello."}};
 Object.keys(N).forEach(function(l){DICT[l]=DICT[l]||{};for(var k in N[l])DICT[l][k]=N[l][k];});})();
 (function(){var N={"en": {"Editar ahorro": "Edit saving", "Nuevo pago de deuda": "New debt payment", "Editar pago de deuda": "Edit debt payment", "Con “+ Nuevo” registras un ingreso o un gasto. Los ahorros y las deudas se anotan en sus propias pestañas.": "With “+ New” you record income or an expense. Savings and debts go in their own tabs."}, "pt": {"Editar ahorro": "Editar poupança", "Nuevo pago de deuda": "Novo pagamento de dívida", "Editar pago de deuda": "Editar pagamento de dívida", "Con “+ Nuevo” registras un ingreso o un gasto. Los ahorros y las deudas se anotan en sus propias pestañas.": "Com “+ Novo” você registra uma renda ou um gasto. Poupanças e dívidas ficam em suas próprias abas."}, "fr": {"Editar ahorro": "Modifier l'épargne", "Nuevo pago de deuda": "Nouveau paiement de dette", "Editar pago de deuda": "Modifier le paiement de dette", "Con “+ Nuevo” registras un ingreso o un gasto. Los ahorros y las deudas se anotan en sus propias pestañas.": "Avec « + Nouveau » vous saisissez un revenu ou une dépense. L'épargne et les dettes ont leurs propres onglets."}, "de": {"Editar ahorro": "Ersparnis bearbeiten", "Nuevo pago de deuda": "Neue Schuldenzahlung", "Editar pago de deuda": "Schuldenzahlung bearbeiten", "Con “+ Nuevo” registras un ingreso o un gasto. Los ahorros y las deudas se anotan en sus propias pestañas.": "Mit „+ Neu“ trägst du Einnahmen oder Ausgaben ein. Ersparnisse und Schulden haben eigene Reiter."}, "it": {"Editar ahorro": "Modifica risparmio", "Nuevo pago de deuda": "Nuovo pagamento del debito", "Editar pago de deuda": "Modifica pagamento del debito", "Con “+ Nuevo” registras un ingreso o un gasto. Los ahorros y las deudas se anotan en sus propias pestañas.": "Con “+ Nuovo” registri un'entrata o una spesa. Risparmi e debiti hanno le loro schede."}};
 Object.keys(N).forEach(function(l){DICT[l]=DICT[l]||{};for(var k in N[l])DICT[l][k]=N[l][k];});})();
@@ -727,7 +732,7 @@ function ritmoHTML(){
   if(!gs.length)return '';
   var g=gs[0],r=momentoResult(g,0),need=r.before;
   var copy=r.months?'Para llegar a '+esc(dateLong(g.date))+', necesitas apartar <b class="num">'+money(need)+'</b> al mes.':g.date?'La fecha de esta meta ya pasó. Ponle una nueva para convertirla en un aporte mensual.':'Ponle una fecha a esta meta para convertirla en un aporte mensual.';
-  return '<section class="card" style="margin-top:12px;border-left:4px solid var(--sav)"><div class="toolbar" style="align-items:start"><div><p class="eyebrow" style="margin:0 0 4px">RITMO DE AHORRO</p><h2 style="margin:0">'+t('Tu próxima decisión protege “{name}”',{name:esc(g.name)})+'</h2></div><button class="btn alt sm" data-a="momento" data-id="'+g.id+'">Mi Balance</button></div><p class="note" style="margin:10px 0 0">'+copy+' Te faltan <b class="num">'+money(r.left)+'</b>.</p></section>';
+  return '<section class="card" style="margin-top:12px;border-left:4px solid var(--sav)"><div class="toolbar" style="align-items:start"><div><p class="eyebrow" style="margin:0 0 4px">RITMO DE AHORRO</p><h2 style="margin:0">'+t('Meta: {name}',{name:esc(g.name)})+'</h2></div><button class="btn alt sm" data-a="momento" data-id="'+g.id+'">Mi Balance</button></div><p class="note" style="margin:10px 0 0">'+copy+' Te faltan <b class="num">'+money(r.left)+'</b>.</p></section>';
 }
 function niceMax(v){if(v<=0)return 100;var e=Math.pow(10,Math.floor(Math.log10(v))),f=v/e;var n=f<=1?1:f<=2?2:f<=4?4:f<=8?8:10;return n*e;}
 
@@ -913,19 +918,19 @@ function smallExpenses(moves,month,cc,wallet,limit){
 function smallExpensesHTML(){
   var limit=ui.smallLimit&&ui.smallLimit[S.cc],list=limit?smallExpenses(S.moves,ui.month,S.cc,ui.wal,limit):[];
   var total=list.reduce(function(a,m){return a+Math.round(m.amount*100);},0)/100;
-  var h='<section class="card" style="margin-top:12px" aria-labelledby="small-title"><h2 id="small-title">'+t('Tus gastos pequeños')+'</h2><p class="note">'+t('Elige hasta qué monto consideras pequeño un gasto. Verás cuánto suman en el mes y la billetera seleccionados. Un gasto pequeño también puede ser necesario.')+'</p>';
+  var h='<section class="card" style="margin-top:12px"><details'+(limit?' open':'')+'><summary id="small-title" class="section-summary">'+t('Gastos pequeños')+'</summary><p class="note">'+t('Suma los gastos del mes hasta el monto que elijas.')+'</p>';
   h+='<form data-kind="small-expenses"><label class="f" for="small-limit"><span>'+t('Monto máximo por gasto')+' ('+esc(curSym(S.cc))+')</span><input id="small-limit" name="limit" inputmode="decimal" required value="'+(limit||'')+'" placeholder="0.00" aria-describedby="small-error"><span class="f-err" id="small-error" role="alert"></span></label><button class="btn alt" style="margin-top:8px" type="submit">'+t('Revisar gastos pequeños')+'</button></form>';
   if(limit){h+='<p role="status">'+list.length+' '+t('gastos registrados')+' · <b class="num">'+money(total)+'</b></p>';
     h+=list.length?'<details><summary style="min-height:48px;cursor:pointer">'+t('Ver los gastos incluidos')+'</summary><div class="list">'+list.slice().sort(function(a,b){return b.date.localeCompare(a.date);}).map(function(m){return '<div><p class="note">'+esc(dateLong(m.date))+'</p>'+moveRow(m)+'</div>';}).join('')+'</div></details>':'<p class="note">'+t('No hay gastos registrados dentro de este monto en el periodo seleccionado.')+'</p>';
   }
-  return h+'</section>';
+  return h+'</details></section>';
 }
 
 /* Cambiar id y notas juntos cuando se prepare una nueva entrega. Solo anunciar funciones incluidas. */
-var PC_RELEASE={id:'prioridades-2026-11-23-ventana21',title:'Más cómodo al usarlo',notes:[
-  'Novedades breves: al cerrarlas, no vuelven a aparecer en esta versión.',
-  'Botones con respuesta suave al toque, sin destellos celestes.',
-  'Gastos pequeños más claros y teclado solo cuando tocas el monto.'
+var PC_RELEASE={id:'pruebas-resumen22',title:'Un Resumen más limpio',notes:[
+  'Registra tus movimientos con + Nuevo, sin botones duplicados.',
+  'Billeteras en su sección; atajos en Movimientos.',
+  'Menos texto y detalles solo cuando los necesites.'
 ]};
 var releaseDismissed=false;
 function showRelease(){
@@ -944,11 +949,12 @@ function releaseHTML(){return '';}
 function vResumen(){
   var k=ui.month,inc=sum(k,'Ingreso'),gas=sum(k,'Gasto');
   var wsR=wallets(S.cc),selW=ui.wal?walletOf(ui.wal):null,balR=selW?wBal(selW):wsR.reduce(function(a,w){return a+wBal(w);},0);
-  var h=releaseHTML()+alertsHTML()+budgetAlertHTML()+owedAlertHTML()+'<div class="actions" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"><button class="btn" data-a="new-expense">'+t('Registrar gasto')+'</button><button class="btn alt" data-a="new-income">'+t('Registrar ingreso')+'</button></div>'+quickBar()+monthBar();
+  var h=alertsHTML()+budgetAlertHTML()+owedAlertHTML()+monthBar();
   h+='<div class="grid stats summary-stats">'
-    +statTile(t('Mis billeteras'),money(balR),selW?esc(selW.name):t('Suma de todas tus billeteras')+' · '+t('Saldo actual según tus registros; no depende del mes seleccionado.'),balR<0?'c-exp':'',true)
-    +statTile(t('Ingresos'),money(inc),t('Lo que entró este mes'),'c-inc')+'</div>';
-  h+='<div class="grid stats" style="margin-top:12px">'+statTile(t('Gastos'),money(gas),t('Lo que gastaste este mes'),'c-exp')+'</div><p class="note">'+t('Los ingresos y gastos corresponden al mes seleccionado. Los movimientos que no anotes no se reflejan en el saldo.')+'</p>';
+    +statTile(t('Mis billeteras'),money(balR),t('Saldo actual'),balR<0?'c-exp':'',true)
+    +statTile(t('Ingresos'),money(inc),t('Este mes'),'c-inc')
+    +statTile(t('Gastos'),money(gas),t('Este mes'),'c-exp')+'</div>';
+  h+='<details class="summary-help"><summary>'+t('Cómo se calcula')+'</summary><p class="note">'+t('El saldo suma tus billeteras según lo registrado. Los ingresos y gastos corresponden al mes seleccionado.')+'</p></details>';
   h+=smallExpensesHTML();
   h+=ritmoHTML();
   h+=compareHTML(k,gas);
@@ -1499,7 +1505,7 @@ function sheetHTML(){
     var ln='';LANGS.forEach(function(l){if(l.c===LANG)ln=l.n;});
     h='<h2>'+t('Ajustes')+'</h2><button class="btn alt" style="width:100%;text-align:left" data-a="region">'+t('Idioma')+': '+ln+'</button>'
       +'<label class="f full" style="margin-top:12px"><span>'+t('Moneda que quieres ver')+'</span><select id="r-base">'+curOptions(S.cc)+'</select></label>'
-      +'<p class="note">'+t('Cada moneda se muestra por separado: no se convierte nada. Elige cuál quieres ver.')+'</p><button type="button" class="btn alt" data-pc-check>Buscar actualizaciones</button><p class="note" id="pc-version-status" role="status">Versión de pruebas · v21</p>'
+      +'<p class="note">'+t('Cada moneda se muestra por separado: no se convierte nada. Elige cuál quieres ver.')+'</p><button type="button" class="btn alt" data-pc-check>Buscar actualizaciones</button><p class="note" id="pc-version-status" role="status">Versión de pruebas · v22</p>'
       +featuresBlock()+backupBlock()+'<div class="foot"><button class="btn alt" data-a="loaddemo">'+t('Cargar datos de ejemplo')+'</button><button class="btn danger" data-a="clearall">'+t('Borrar todo y empezar')+'</button></div>'
       +'<p class="note">'+t('Tus datos se guardan solo en este dispositivo y en este navegador.')+'</p><div class="foot"><button class="btn grow" data-a="close">'+t('Listo')+'</button></div>';
   }
@@ -1519,7 +1525,8 @@ function render(){
   document.getElementById('banner').innerHTML=S.demo?'<div class="banner"><span>'+t('<b>Estás viendo datos de ejemplo.</b> Pruébalos y, cuando quieras, empieza con los tuyos.')+'</span><button class="btn sm" data-a="clearall">'+t('Empezar con mis datos')+'</button></div>':'';
   if(ui.view==='metas')ui.view='ahorros';
   var hog=(ui.space==='hogar'&&H.hh);
-  var v=spaceBar()+curBar()+(hog?'':walBar())+(hog?vHogar():{resumen:vResumen,movimientos:vMovs,presupuesto:vPresu,ahorros:vAhorros,metas:vMetas,deudas:vDeudas,billeteras:vBilleteras}[ui.view]());
+  ui.wal=null;
+  var v=spaceBar()+curBar()+(hog?vHogar():{resumen:vResumen,movimientos:vMovs,presupuesto:vPresu,ahorros:vAhorros,metas:vMetas,deudas:vDeudas,billeteras:vBilleteras}[ui.view]());
   if(ui.view==='movimientos'||ui.view==='resumen')v+='<button class="btn fab" data-a="new">'+t('+ Nuevo')+'</button>';
   document.getElementById('view').innerHTML=v;
   var sh=document.getElementById('sheet');
