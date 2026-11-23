@@ -231,7 +231,7 @@ input[aria-invalid="true"]:focus-visible{outline-color:var(--exp)}
 .sheet h2{font-size:20px;margin-bottom:14px}
 .sheet .foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
 .sheet .foot .grow{flex:1}
-/* Momento Claro: 12 px entre acciones (misma distribución). Error del monto: texto + icono, no solo color. */
+/* Mi Balance: 12 px entre acciones (misma distribución). Error del monto: texto + icono, no solo color. */
 .sheet .foot.mom-foot{gap:12px}
 .mom-err{margin:0;color:var(--exp);font-size:13.5px;font-weight:600;line-height:1.3}
 .mom-err:empty{display:none}
@@ -583,6 +583,7 @@ TOUR.splice(2,0,{v:'movimientos',neu:true,t:K("Anota un gasto con un toque"),p:K
 if(CLOUD){TOUR[TOUR.length-1]={v:'resumen',neu:true,t:K("Tus datos están en tu cuenta"),p:K("Tus datos se guardan en la nube, en tu cuenta. Los ves igual en tu celular y en tu computadora, entrando con tu correo."),n:TOUR[TOUR.length-1].n,a:[K("Toca el engranaje ⚙️ de arriba y luego “Mi cuenta”."),K("Ahí puedes tocar “Sincronizar ahora” o “Cerrar sesión”."),K("En Resumen y Deudas verás un aviso con un interruptor. Actívalo para recibir un aviso 1 día antes y el mismo día de cada cuota."),K("Si quieres una copia extra, toca el engranaje ⚙️, luego “Ajustes” y “Descargar respaldo”.")]};}
 TOUR.push({v:'resumen',neu:true,t:K("Empieza con lo tuyo"),p:K("Los datos de ejemplo te sirvieron para practicar. Ahora borra los de ejemplo y anota los tuyos."),a:[K("Mira el aviso de arriba que dice “Estás viendo datos de ejemplo”."),K("Toca “Empezar con mis datos”."),K("Toca “+ Nuevo” y anota tu primer movimiento.")]});
 TOUR.splice(3,0,{v:'movimientos',neu:true,t:K("Elige de dónde sale tu dinero"),p:K("Al anotar un gasto, un ahorro o el pago de una deuda, puedes elegir si se descuenta de tus ingresos, si sale de tus ahorros o si no afecta tu Disponible. Así tus cuentas siempre cuadran."),a:[K("Toca “+ Nuevo” y elige Gasto."),K("Mira la pregunta “¿Descontar de tus ingresos?”."),K("Elige “De mis ahorros” si pagas con dinero que ya tenías ahorrado.")]},{v:'resumen',neu:true,t:K("Usa más de una moneda"),p:K("Cada movimiento, meta y deuda tiene su propia moneda. Los totales se muestran por separado, sin convertir nada. Si usas más de una, aparecen botones arriba para elegir cuál ver.")});
+TOUR.splice(TOUR.length-1,0,{"v":"resumen","t":"Mi Balance: antes de comprar","p":"Simula cómo una compra afecta tu meta de ahorro sin registrar ni mover dinero.","a":["Crea una meta personal en Metas, con monto y fecha.","En Resumen, toca “Mi Balance” y elige la meta.","Escribe el monto de la compra y toca “Ver impacto”.","Revisa qué parte de lo que te falta representa y el aporte mensual estimado para mantener tu fecha.","Si decides comprar, toca “Registrar gasto” y luego “Guardar” para confirmarlo."]});
 function trOK(k){return LANG==='es'||!!(DICT[LANG]&&DICT[LANG][k]!==undefined);}
 function tourSteps(){return TOUR.filter(function(x){return !x.neu||trOK(x.t);});}
 function tourActions(T){return (T.a||[]).filter(trOK).map(function(x){return '<li><span>'+t(x).replace(/“([^”]+)”/g,'<b>“$1”</b>')+'</span></li>';}).join('');}
@@ -692,7 +693,7 @@ function spentByCat(k){var o={};S.moves.forEach(function(m){if(m.type==='Gasto'&
 function goalSaved(g){return g.initial+S.moves.reduce(function(a,m){return a+(m.goalId===g.id&&mc(m)===mc(g)?m.amount:0);},0);}
 function savOut(){return S.moves.reduce(function(a,m){return a+(m.fromSav?toBase(m):0);},0);}
 function debtPaid(d){return d.initial+S.moves.reduce(function(a,m){return a+(m.debtId===d.id&&mc(m)===mc(d)?m.amount:0);},0);}
-/* Momento Claro no mueve dinero: solo hace visible el efecto de una compra antes de anotarla. */
+/* Mi Balance no mueve dinero: solo hace visible el efecto de una compra antes de anotarla. */
 function activeGoals(){return S.goals.filter(function(g){return mc(g)===S.cc&&g.kind!=='ext'&&g.target>goalSaved(g);});}
 function monthsLeft(g){var d=daysUntil(g.date);return d!=null&&d>=0?Math.max(1,Math.ceil((d+1)/30.44)):null;}
 function momentoResult(goal,amount){
@@ -706,7 +707,7 @@ function ritmoHTML(){
   if(!gs.length)return '';
   var g=gs[0],r=momentoResult(g,0),need=r.before;
   var copy=r.months?'Para llegar a '+esc(dateLong(g.date))+', necesitas apartar <b class="num">'+money(need)+'</b> al mes.':g.date?'La fecha de esta meta ya pasó. Ponle una nueva para convertirla en un aporte mensual.':'Ponle una fecha a esta meta para convertirla en un aporte mensual.';
-  return '<section class="card" style="margin-top:12px;border-left:4px solid var(--sav)"><div class="toolbar" style="align-items:start"><div><p class="eyebrow" style="margin:0 0 4px">RITMO DE AHORRO</p><h2 style="margin:0">'+t('Tu próxima decisión protege “{name}”',{name:esc(g.name)})+'</h2></div><button class="btn alt sm" data-a="momento" data-id="'+g.id+'">Momento Claro</button></div><p class="note" style="margin:10px 0 0">'+copy+' Te faltan <b class="num">'+money(r.left)+'</b>.</p></section>';
+  return '<section class="card" style="margin-top:12px;border-left:4px solid var(--sav)"><div class="toolbar" style="align-items:start"><div><p class="eyebrow" style="margin:0 0 4px">RITMO DE AHORRO</p><h2 style="margin:0">'+t('Tu próxima decisión protege “{name}”',{name:esc(g.name)})+'</h2></div><button class="btn alt sm" data-a="momento" data-id="'+g.id+'">Mi Balance</button></div><p class="note" style="margin:10px 0 0">'+copy+' Te faltan <b class="num">'+money(r.left)+'</b>.</p></section>';
 }
 function niceMax(v){if(v<=0)return 100;var e=Math.pow(10,Math.floor(Math.log10(v))),f=v/e;var n=f<=1?1:f<=2?2:f<=4?4:f<=8?8:10;return n*e;}
 
@@ -1296,7 +1297,7 @@ function sheetHTML(){
       +'<div class="foot"><button class="btn grow" type="submit">'+t('Guardar')+'</button><button class="btn alt" type="button" data-a="close">'+t('Cancelar')+'</button>'+(s.id?'<button class="btn danger" type="button" data-a="del">'+t('Eliminar')+'</button>':'')+'</div></form>';
   }else if(s.kind==='momento'){
     var mg=activeGoals(),chosen=mg.filter(function(g){return g.id===s.goalId;})[0]||mg[0],ma=Math.max(0,Number(s.amount)||0),mr=chosen&&ma>0?momentoResult(chosen,ma):null;
-    h='<h2>Momento Claro</h2><p class="note" style="margin-top:-6px">Antes de gastar, mira qué decisión protege tu meta. Esto no registra ni mueve dinero.</p>'
+    h='<h2>Mi Balance</h2><p class="note" style="margin-top:-6px">Antes de gastar, mira qué decisión protege tu meta. Esto no registra ni mueve dinero.</p>'
       +'<form data-kind="momento"><div class="fgrid"><label class="f full"><span>Meta que quieres proteger</span><select name="goalId">'+opts(mg,chosen&&chosen.id)+'</select></label>'
       +'<label class="f"><span>Monto de la compra ('+sym+')</span><input id="mom-amt" name="amount" inputmode="decimal" aria-required="true" aria-describedby="mom-amt-err" placeholder="0.00" value="'+(ma||'')+'"></label>'
       +'<label class="f"><span>¿Qué estás pensando comprar?</span><input name="desc" maxlength="80" placeholder="Ej. delivery, ropa, salida" value="'+esc(s.desc||'')+'"></label>'
@@ -1486,6 +1487,7 @@ var COACH=[
  {t:K('¡Bienvenido a Plata Clara!'),p:K('Te mostramos lo básico en menos de un minuto. Puedes saltar cuando quieras.')},
  {sel:'.fab',view:'resumen',t:K('Anota tu dinero'),p:K('Con “+ Nuevo” registras un ingreso o un gasto. Los ahorros y las deudas se anotan en sus propias pestañas.')},
  {sel:'.card.stat.hero',view:'resumen',t:K('Tu dinero en billeteras'),p:K('Aquí ves cuánto tienes en total en tus billeteras. Elige una arriba para ver solo esa.')},
+ {"sel":"[data-a=\"momento\"]","view":"resumen","t":"Mi Balance: antes de comprar","p":"Simula cómo una compra afecta tu meta de ahorro. Crea una meta personal en Metas y toca “Mi Balance” en Resumen. Elige la meta, escribe el monto y toca “Ver impacto”: verás qué parte de lo que te falta representa y cuánto tendrías que ahorrar al mes para mantener tu fecha. La simulación no guarda gastos; para anotarlo, toca “Registrar gasto” y confirma con “Guardar”."},
  {sel:'NAV',t:K('Cambia de sección'),p:K('Movimientos, Presupuesto, Ahorros, Deudas y Billeteras están aquí.')},
  {sel:'[data-a="nav"][data-v="billeteras"]',t:K('Tus billeteras'),p:K('Crea una billetera por cada lugar donde guardas dinero (efectivo, Yape, banco) y mira cuánto tienes en cada una.')},
  {sel:'#mq',view:'movimientos',t:K('Busca tus movimientos'),p:K('Escribe una palabra o elige una categoría para encontrar lo que anotaste.')},
@@ -1672,7 +1674,7 @@ document.addEventListener('click',function(e){
   else if(a==='filter'){ui.filter=el.dataset.v;render();}
   else if(a==='new'){ui.sheet=(ui.space==='hogar'&&H.hh)?{kind:'hmove'}:{kind:'move'};render();}
   else if(a==='edit'){ui.sheet={kind:'move',id:id};render();}
-  else if(a==='momento'){var mg0=activeGoals(),g0=mg0.filter(function(g){return g.id===id;})[0]||mg0[0];if(!g0){ui.view='ahorros';render();toast('Crea una meta primero para usar Momento Claro.');return;}ui.sheet={kind:'momento',goalId:g0.id};render();}
+  else if(a==='momento'){var mg0=activeGoals(),g0=mg0.filter(function(g){return g.id===id;})[0]||mg0[0];if(!g0){ui.view='ahorros';render();toast('Crea una meta primero para usar Mi Balance.');return;}ui.sheet={kind:'momento',goalId:g0.id};render();}
   else if(a==='momento-register'){
     var mf=el.closest('form[data-kind="momento"]'),md=mf&&new FormData(mf),mv=md&&num(md.get('amount'));
     if(!md)return;
@@ -1940,7 +1942,7 @@ function chime(){try{var A=window.AudioContext||window.webkitAudioContext,c=new 
 if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',function(e){if(e.data&&e.data.type==='pc-push')chime();});
 document.addEventListener('input',function(e){if(e.target.id==='mq'){ui.q=e.target.value;var ml=document.getElementById('mlist');if(ml)ml.innerHTML=movList();}
   momStale(e);});
-/* Momento Claro: si cambian meta o monto, el resultado anterior ya no corresponde; se pide "Ver impacto" de nuevo. */
+/* Mi Balance: si cambian meta o monto, el resultado anterior ya no corresponde; se pide "Ver impacto" de nuevo. */
 function momStale(e){var mf=e.target.closest&&e.target.closest('form[data-kind="momento"]');if(mf){var mrs=document.getElementById('mom-res'),mrb=mf.querySelector('[data-a="momento-register"]');if(mrs){var nt=document.createElement('p');nt.id='mom-stale';nt.className='note';nt.setAttribute('role','status');nt.style.margin='16px 0 0';nt.textContent='Cambiaste los datos. Toca «Ver impacto» para actualizar.';mrs.replaceWith(nt);}if(mrb)mrb.remove();
   if(e.target.id==='mom-amt'&&e.target.getAttribute('aria-invalid')==='true'&&num(e.target.value)>0)momErr(mf,false);}}
 /* Monto vacío, cero, negativo o no numérico: mensaje junto al campo (no solo un aviso flotante) y foco sin desplazar la vista. */
