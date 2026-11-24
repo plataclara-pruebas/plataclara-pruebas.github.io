@@ -32,6 +32,7 @@
     },{threshold:.08});
     cards.forEach(function(card){observer.observe(card);});
   }
+  document.addEventListener('animationend',function(e){if(e.animationName==='pc-scene')e.target.classList.remove('pc-scene-enter');});
   document.addEventListener('pc-render',enhance);
   document.addEventListener('keydown',function(e){if(e.key==='Escape')hideTip();});
   window.addEventListener('scroll',hideTip,{passive:true});

@@ -48,7 +48,7 @@ body[data-pc-view] .main{max-width:1480px}
 @keyframes dash-enter{from{opacity:.25;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
 @keyframes dash-grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
 @keyframes dash-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-@media(prefers-reduced-motion:no-preference){.pc-experience .dash-reveal{animation:dash-enter .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--dash-delay,0ms)}.pc-experience .dash-reveal .chart rect{animation:dash-grow .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--dash-delay,0ms) + 100ms)}.pc-experience .dash-reveal .fill{animation:dash-fill .75s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--dash-delay,0ms) + 120ms)}}
+@media(prefers-reduced-motion:no-preference){.pc-experience .dash-reveal{animation:dash-enter .55s cubic-bezier(.2,.7,.2,1) backwards;animation-delay:var(--dash-delay,0ms)}.pc-experience .dash-reveal .chart rect{animation:dash-grow .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--dash-delay,0ms) + 100ms)}.pc-experience .dash-reveal .fill{animation:dash-fill .75s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--dash-delay,0ms) + 120ms)}}
 @media(prefers-reduced-motion:reduce){.pc-experience *,.side .nav-btn{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
 /* Plata Clara / Relieve: light on the surface, green depth, quiet motion. */
@@ -88,7 +88,7 @@ body[data-pc-view] input:focus-visible,body[data-pc-view] select:focus-visible,b
 @media(min-width:1100px){body[data-pc-view="billeteras"] .main,body[data-pc-view="movimientos"] .main{max-width:1250px}}
 @media(max-width:699px){.pc-experience .grid,.pc-experience .cards{gap:14px}.wallet-page .wallet-deck{grid-template-columns:minmax(0,1fr);gap:16px}.wallet-page .wallet-deck>[data-a="w-edit"]{min-height:174px}.wallet-page [data-a="w-edit"]>.num{font-size:clamp(18px,6vw,28px)}body[data-pc-view] .top{padding-top:8px}.pc-experience .monthbar .label{min-width:0;flex:1}.pc-experience .monthbar{max-width:100%}}
 @media(hover:hover) and (prefers-reduced-motion:no-preference){.wallet-page .wallet-deck>[data-a="w-edit"]:hover{transform:translateY(-5px);box-shadow:0 22px 40px -22px color-mix(in srgb,var(--accent) 60%,transparent)}.pc-experience .chip:hover{transform:translateY(-2px)}}
-@media(prefers-reduced-motion:no-preference){.pc-scene-enter{animation:pc-scene .32s cubic-bezier(.2,.7,.2,1)}.pc-experience .dash-reveal:not(.card):not(.list):not(.ow-hero){animation:dash-enter .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--dash-delay,0ms)}}
+@media(prefers-reduced-motion:no-preference){.pc-scene-enter{animation:pc-scene .32s cubic-bezier(.2,.7,.2,1)}.pc-experience .dash-reveal:not(.card):not(.list):not(.ow-hero){animation:dash-enter .5s cubic-bezier(.2,.7,.2,1) backwards;animation-delay:var(--dash-delay,0ms)}}
 @keyframes pc-scene{from{opacity:.55;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.pc-experience *,.pc-scene-enter{animation:none!important;transition:none!important}.wallet-page [data-a="w-edit"]:hover{transform:none}}
 /* Keep long financial amounts inside narrow mobile statistic cards. */
