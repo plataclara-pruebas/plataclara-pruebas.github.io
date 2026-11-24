@@ -147,3 +147,4 @@ body button:not(:disabled):active{transform:translateY(1px) scale(.96);filter:br
 .pc-interactive{overflow:hidden}
 /* Contain the hero's decorative ring on every screen, including Billeteras. */
 .pc-experience .stat.hero{overflow:hidden;isolation:isolate}
+@media(hover:hover) and (pointer:fine){.pc-experience .btn:hover:not(:disabled),body .icon-btn:hover:not(:disabled),body .chip:hover:not(:disabled),#pc-ov .pc-auth-card .pc-b:hover:not(:disabled){filter:brightness(1.12)}}
