@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261123-luz-v26">
+<meta name="pc-version" content="20261123-menta-v27">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B45309"><meta name="robots" content="noindex">
@@ -929,9 +929,9 @@ function smallExpensesHTML(){
 }
 
 /* Cambiar id y notas juntos cuando se prepare una nueva entrega. Solo anunciar funciones incluidas. */
-var PC_RELEASE={id:'pruebas-luz26',title:'Más luz, más vida',notes:[
- 'Las tarjetas se iluminan al pasar el mouse y los botones responden al pulsar.',
- 'Una entrada renovada, con cristal, reflejos y el verde de Plata Clara.',
+var PC_RELEASE={id:'pruebas-menta27',title:'Una Plata Clara más luminosa',notes:[
+ 'Navegación y + Nuevo con brillo, elevación y respuesta al seleccionar.',
+ 'Verde menta más claro en la app y en la entrada, conservando nuestra identidad.',
  'Diseño adaptado a celular y computadora.'
 ]};
 var releaseDismissed=false;
@@ -1528,7 +1528,7 @@ function render(){
   var hog=(ui.space==='hogar'&&H.hh);
   ui.wal=null;
   var v=spaceBar()+curBar()+(hog?vHogar():{resumen:vResumen,movimientos:vMovs,presupuesto:vPresu,ahorros:vAhorros,metas:vMetas,deudas:vDeudas,billeteras:vBilleteras}[ui.view]());
-  if(ui.view==='movimientos'||ui.view==='resumen')v+='<button class="btn fab" data-a="new">'+t('+ Nuevo')+'</button>';
+  if(ui.view==='movimientos'||ui.view==='resumen')v+='<button class="btn fab" data-a="new">'+'<span class="pc-new-icon" aria-hidden="true">+</span><span>'+t('Nuevo')+'</span></button>';
   document.getElementById('view').innerHTML=v;
   document.body.dataset.pcView=hog?'hogar':ui.view;
   document.getElementById('view').dataset.scene=[ui.view,ui.month,S.cc,ui.space].join(':');

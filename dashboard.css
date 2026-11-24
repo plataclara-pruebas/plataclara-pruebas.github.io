@@ -148,3 +148,42 @@ body button:not(:disabled):active{transform:translateY(1px) scale(.96);filter:br
 /* Contain the hero's decorative ring on every screen, including Billeteras. */
 .pc-experience .stat.hero{overflow:hidden;isolation:isolate}
 @media(hover:hover) and (pointer:fine){.pc-experience .btn:hover:not(:disabled),body .icon-btn:hover:not(:disabled),body .chip:hover:not(:disabled),#pc-ov .pc-auth-card .pc-b:hover:not(:disabled){filter:brightness(1.12)}}
+/* Menta / v27. A light default independent of the operating system theme. */
+:root:not([data-theme="dark"]){--bg:#effbf6;--surface:#fff;--surface2:#e6f7ef;--ink:#123e30;--muted:#47695b;--line:#c9e7d9;--accent:#087b59;--accent-ink:#fff;--inc:#08734c;--exp:#b63c2c;--sav:#2860b0;--debt:#8b5907;color-scheme:light}
+:root[data-theme="dark"]{--bg:#132f2a;--surface:#1d4036;--surface2:#285346;--ink:#edfff5;--muted:#bedfce;--line:#3b6856;--accent:#76edba;--accent-ink:#103f2d;color-scheme:dark}
+body[data-pc-view]{background:radial-gradient(ellipse at 0 0,color-mix(in srgb,var(--accent) 10%,transparent),transparent 55%),var(--bg)}
+.pc-experience .stat.hero{background:radial-gradient(ellipse at 85% 0%,#ffffffb3,transparent 70%),linear-gradient(125deg,#9cebc7,#d4fae8);color:#123e30;border-color:#91d9b8;box-shadow:inset 0 1px #fff,0 12px 30px -18px #128a5d66}
+.pc-experience .stat.hero .v,.pc-experience .stat.hero .k,.pc-experience .stat.hero .h{color:#123e30}
+body[data-pc-view] .side{background:linear-gradient(155deg,color-mix(in srgb,var(--surface2) 80%,var(--surface)),var(--surface) 80%)}
+/* Deliberately visible feedback on the two most used controls. */
+body .nav-btn,body .fab{overflow:hidden;isolation:isolate;transition:transform .22s cubic-bezier(.2,.8,.2,1),background .22s,box-shadow .22s,filter .22s}
+body .nav-btn:after,body .fab:after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(105deg,transparent 25%,#ffffff66 48%,transparent 70%);transform:translateX(-130%);opacity:0}
+body .nav-btn svg,.pc-new-icon{transition:transform .3s cubic-bezier(.2,.8,.2,1)}
+body .fab{display:flex;align-items:center;gap:9px;padding:12px 20px;min-height:52px}
+.pc-new-icon{display:inline-grid;place-items:center;width:24px;height:24px;font-size:26px;line-height:1;font-weight:400}
+body .nav-btn[aria-current="page"]{background:color-mix(in srgb,var(--accent) 17%,var(--surface));box-shadow:inset 4px 0 var(--accent),0 5px 18px -10px var(--pc-glow)}
+@media(hover:hover) and (pointer:fine){
+ body .nav-btn:hover{background:color-mix(in srgb,var(--accent) 22%,var(--surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 45%,transparent),0 8px 18px -8px var(--pc-glow);transform:translateX(5px)}
+ body .nav-btn:hover svg{transform:translateY(-2px) scale(1.18)}
+ body .fab:hover:not(:disabled){transform:translateY(-6px) scale(1.05);filter:brightness(1.16);box-shadow:0 0 0 5px var(--pc-light),0 16px 32px -10px var(--pc-glow)}
+ body .fab:hover .pc-new-icon{transform:rotate(90deg) scale(1.15)}
+ body .nav-btn:hover:after,body .fab:hover:after{opacity:1;animation:pc-sweep .65s ease-out}
+}
+body .nav-btn:active:not(:disabled),body .fab:active:not(:disabled){transform:scale(.93);filter:brightness(1.24)}
+body .nav-btn.pc-choice,body .fab.pc-choice{animation:pc-select-pop .45s cubic-bezier(.16,1,.3,1)}
+@keyframes pc-sweep{from{transform:translateX(-130%)}to{transform:translateX(130%)}}
+@keyframes pc-select-pop{0%{transform:scale(.91);filter:brightness(1.35)}60%{transform:scale(1.045)}100%{transform:none;filter:brightness(1)}}
+@keyframes pc-select-light{0%{filter:brightness(1.45);box-shadow:inset 0 0 0 2px var(--accent),0 0 0 5px var(--pc-light)}100%{filter:brightness(1)}}
+/* The entry uses the same lighter mint, emerald accents and glass detail. */
+#pc-ov.gate.pc-entry{background:radial-gradient(ellipse at 0 0,#a3efcf,transparent 60%),radial-gradient(ellipse at 100% 100%,#c1f5dd,transparent 60%),#effbf6;color:#123e30}
+#pc-ov.pc-entry .pc-tag{color:#355f4d}
+#pc-ov.pc-entry .pc-logo{background:linear-gradient(135deg,#fff,#d3fae7);color:#087b59;border-color:#fff;box-shadow:inset 0 1px #fff,0 0 30px #54d89f33,0 12px 28px #0b6a3a14}
+#pc-ov.pc-entry .pc-lg select{background:#ffffff9c;color:#123e30;border-color:#88c9a9}
+#pc-ov.gate.pc-entry:before{border-top-color:#41aa7b33;box-shadow:inset 0 8px 14px #fff8,0 -2px 20px #70d9aa30}
+#pc-ov.gate.pc-entry:after{border-top-color:#41aa7b26;box-shadow:inset 0 8px 14px #fff6}
+#pc-ov.pc-entry .pc-auth-art i{border-color:#399f7180;box-shadow:inset 0 5px 15px #fff9,0 -3px 16px #7edca344}
+#pc-ov.gate .pc-card.pc-auth-card{box-shadow:inset 0 1px #fff,0 0 0 6px #ffffff30,0 18px 60px #087b591f}
+@media(prefers-reduced-motion:reduce){body .nav-btn:hover,body .fab:hover:not(:disabled),body .nav-btn:active:not(:disabled),body .fab:active:not(:disabled){transform:none!important}body .nav-btn:hover svg,body .fab:hover .pc-new-icon{transform:none}body .nav-btn:after,body .fab:after{animation:none!important}body .nav-btn.pc-choice,body .fab.pc-choice{animation:pc-select-light .35s ease-out!important}}
+/* Non-spatial hover animation remains visible with reduced motion. */
+@keyframes pc-soft-glow{0%,100%{opacity:0}50%{opacity:.8}}
+@media(prefers-reduced-motion:reduce) and (hover:hover) and (pointer:fine){body .nav-btn:hover:after,body .fab:hover:after{transform:none;animation:pc-soft-glow .65s ease-in-out!important}}
