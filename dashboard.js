@@ -39,3 +39,27 @@
   reduced.addEventListener('change',function(){if(observer)observer.disconnect();hideTip();document.querySelectorAll('.dash-reveal').forEach(function(n){n.classList.remove('dash-reveal');});});
   enhance();
 })();
+/* Delegated effects also cover dynamically rendered forms and account screens. */
+(function(){
+ 'use strict';
+ var reduce=matchMedia('(prefers-reduced-motion: reduce)'),fine=matchMedia('(hover: hover) and (pointer: fine)'),lit=null,frame=0;
+ var selector='button:not(:disabled),a[href],.seg label';
+ function clear(){if(lit){lit.classList.remove('pc-lit');lit=null;}}
+ document.addEventListener('pointermove',function(e){
+  if(!fine.matches||reduce.matches)return;
+  var card=e.target.closest('.pc-experience .card,.pc-experience .ow-hero,.wallet-deck>[data-a="w-edit"]');
+  if(card!==lit){clear();lit=card;if(lit)lit.classList.add('pc-lit');}
+  if(!card||frame)return;
+  var x=e.clientX,y=e.clientY;frame=requestAnimationFrame(function(){frame=0;if(!card.isConnected)return;var r=card.getBoundingClientRect();card.style.setProperty('--pc-x',(x-r.left)+'px');card.style.setProperty('--pc-y',(y-r.top)+'px');});
+ },{passive:true});
+ document.addEventListener('pointerleave',clear);
+ document.addEventListener('pointerdown',function(e){
+  if(reduce.matches||e.button!==0)return;
+  var b=e.target.closest(selector);if(!b)return;
+  b.classList.add('pc-interactive');var r=b.getBoundingClientRect(),dot=document.createElement('span'),size=Math.max(r.width,r.height)*2;
+  dot.className='pc-ripple';dot.setAttribute('aria-hidden','true');dot.style.setProperty('--pc-ripple-size',size+'px');dot.style.setProperty('--pc-ripple-x',(e.clientX-r.left)+'px');dot.style.setProperty('--pc-ripple-y',(e.clientY-r.top)+'px');b.appendChild(dot);setTimeout(function(){dot.remove();},600);
+ },{passive:true});
+ document.addEventListener('pc-render',function(){clear();if(reduce.matches)return;document.querySelectorAll('.nav-btn[aria-current="page"],.chip[aria-pressed="true"]').forEach(function(b){b.classList.add('pc-choice');});});
+ document.addEventListener('animationend',function(e){if(e.animationName==='pc-choice')e.target.classList.remove('pc-choice');});
+ reduce.addEventListener('change',clear);
+})();

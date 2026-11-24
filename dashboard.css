@@ -94,3 +94,54 @@ body[data-pc-view] input:focus-visible,body[data-pc-view] select:focus-visible,b
 /* Keep long financial amounts inside narrow mobile statistic cards. */
 .pc-experience .stat .v{font-size:clamp(12px,calc(100cqw / (var(--len,10) * .64)),36px)}
 @media(max-width:699px){.pc-experience .hero .v{font-size:clamp(16px,calc(100cqw / (var(--len,10) * .65)),40px)}}
+/* Luz / v26: brighter surfaces, visible interaction, original emerald glass entry. */
+:root{--pc-light:color-mix(in srgb,var(--accent) 20%,transparent);--pc-glow:color-mix(in srgb,var(--accent) 32%,transparent)}
+.pc-experience .card,.pc-experience .list,.pc-experience .ow-hero,.wallet-page .wallet-deck>[data-a="w-edit"]{position:relative;transition:transform 220ms cubic-bezier(.2,.8,.2,1),box-shadow 220ms,border-color 220ms,filter 220ms;background-image:radial-gradient(ellipse at 15% 0%,color-mix(in srgb,var(--accent) 9%,var(--surface)),var(--surface) 72%);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--surface) 90%,transparent),0 6px 16px -8px var(--pc-light),0 18px 38px -22px var(--pc-glow)}
+.pc-experience .stat.hero{background-image:radial-gradient(ellipse at 85% 0%,color-mix(in srgb,var(--accent-ink) 32%,transparent),transparent 65%),linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 85%,var(--ink)))}
+.pc-experience .card:before,.pc-experience .ow-hero:before,.wallet-deck>[data-a="w-edit"]:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:radial-gradient(300px circle at var(--pc-x,50%) var(--pc-y,0%),color-mix(in srgb,var(--accent) 12%,transparent),transparent 75%);opacity:0;transition:opacity .2s}
+.pc-experience .card.pc-lit:before,.pc-experience .ow-hero.pc-lit:before,.wallet-deck>[data-a="w-edit"].pc-lit:before{opacity:1}
+.pc-interactive{position:relative;isolation:isolate}
+.pc-ripple{position:absolute;pointer-events:none;z-index:2;border-radius:50%;width:var(--pc-ripple-size);height:var(--pc-ripple-size);left:var(--pc-ripple-x);top:var(--pc-ripple-y);background:radial-gradient(circle,color-mix(in srgb,var(--accent) 30%,transparent),transparent 68%);transform:translate(-50%,-50%) scale(0);animation:pc-ripple .55s ease-out forwards}
+.btn .pc-ripple,.pc-b .pc-ripple{background:radial-gradient(circle,#ffffff88,transparent 68%)}
+body .nav-btn[aria-current="page"],body .chip[aria-pressed="true"],body .seg input:checked+label{box-shadow:inset 0 1px 0 color-mix(in srgb,var(--surface) 50%,transparent),0 0 0 1px var(--pc-light),0 6px 18px -8px var(--pc-glow)}
+.pc-choice{animation:pc-choice .38s cubic-bezier(.16,1,.3,1)}
+.pc-experience .row:hover,.pc-experience .row:focus-visible{background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
+body .btn:focus-visible,body .nav-btn:focus-visible,body .chip:focus-visible,#pc-ov .pc-b:focus-visible{outline:2px solid var(--accent);outline-offset:4px;box-shadow:0 0 0 6px var(--pc-light)}
+@media(hover:hover) and (pointer:fine){
+ .pc-experience .card:hover,.pc-experience .ow-hero:hover,.wallet-page .wallet-deck>[data-a="w-edit"]:hover{transform:translateY(-5px);border-color:color-mix(in srgb,var(--accent) 55%,var(--line))!important;box-shadow:inset 0 1px 0 var(--surface),0 0 0 1px var(--pc-light),0 12px 28px -12px var(--pc-glow),0 28px 46px -24px var(--pc-glow)}
+ body button:not(:disabled):hover{filter:brightness(1.065)}
+ body .btn:hover,body .icon-btn:hover,body .chip:hover,#pc-ov .pc-b:hover{transform:translateY(-3px);box-shadow:0 0 0 1px var(--pc-light),0 10px 24px -9px var(--pc-glow)}
+ body .nav-btn:hover{background:color-mix(in srgb,var(--accent) 12%,var(--surface));box-shadow:inset 0 1px 0 var(--surface),0 6px 16px -10px var(--pc-glow)}
+ body .pc-l:hover{color:var(--accent);text-shadow:0 0 18px var(--pc-glow)}
+}
+body button:not(:disabled):active{transform:translateY(1px) scale(.96);filter:brightness(1.12)}
+@keyframes pc-ripple{to{transform:translate(-50%,-50%) scale(1);opacity:0}}
+@keyframes pc-choice{0%{filter:brightness(1.4);transform:scale(.94)}65%{transform:scale(1.025)}100%{filter:brightness(1);transform:none}}
+/* Scope the new entry to gate screens, leaving account dialogs in their app context. */
+#pc-ov.gate.pc-entry{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:clamp(32px,7vw,100px);align-content:center;align-items:center;justify-content:center;overflow-x:hidden;overflow-y:auto;isolation:isolate;padding:60px max(28px,calc((100vw - 1120px)/2));background:radial-gradient(ellipse at 15% 0%,color-mix(in srgb,var(--accent) 60%,transparent),transparent 55%),radial-gradient(ellipse at 100% 100%,color-mix(in srgb,var(--accent) 70%,transparent),transparent 60%),linear-gradient(145deg,color-mix(in srgb,#0E6B50 22%,#071d16),#0b3529 65%,#0E6B50);color:#fff}
+#pc-ov.gate.pc-entry:before,#pc-ov.gate.pc-entry:after{content:"";position:fixed;pointer-events:none;z-index:-1;width:90vw;height:45vw;border:1px solid #83eac244;border-radius:50%;transform:rotate(-28deg);box-shadow:inset 0 8px 14px #a8ffce15,0 -2px 20px #9cf7cc30}
+#pc-ov.gate.pc-entry:before{left:-35vw;top:3vh;border-width:28px;border-color:#68d9ab0c;border-top-color:#a7f9d44d}
+#pc-ov.gate.pc-entry:after{right:-40vw;bottom:0;border-width:45px;border-color:#68d9ab08;border-top-color:#a7f9d426;transform:rotate(-36deg)}
+#pc-ov.pc-entry .pc-hero{text-align:left;margin:0;max-width:540px;position:relative}
+#pc-ov.pc-entry .pc-logo{margin:0 0 28px;width:68px;height:68px;border:1px solid #b1ffde66;border-radius:22px;background:linear-gradient(135deg,#ffffff29,#ffffff0c);color:#c6ffe4;box-shadow:inset 0 1px 0 #ffffff55,0 0 30px #66e6b130,0 16px 30px #0002;backdrop-filter:blur(14px)}
+#pc-ov.pc-entry .pc-name{font-size:clamp(36px,4.5vw,62px);letter-spacing:-.05em;line-height:1.05;text-shadow:0 4px 28px #8ef3c52b}
+#pc-ov.pc-entry .pc-tag{font-size:clamp(17px,2vw,22px);line-height:1.5;color:#e0f7eb;margin-top:18px;max-width:330px}
+#pc-ov.pc-entry .pc-lg{margin-top:28px}
+#pc-ov.pc-entry .pc-lg select{border-radius:12px;background:#ffffff10;min-height:44px}
+#pc-ov.gate .pc-card.pc-auth-card{position:relative;margin:0;max-width:440px;width:100%;border:1px solid #ffffff90;border-radius:28px;padding:32px;background:linear-gradient(140deg,#fffffff5,#f2fff9eb);backdrop-filter:blur(26px);box-shadow:inset 0 1px 0 #fff,0 0 0 6px #ffffff05,0 0 60px #82f1bd1c,0 32px 80px #0005;overflow:auto;max-height:calc(100dvh - 120px);animation:pc-auth-in .55s cubic-bezier(.2,.8,.2,1)}
+#pc-ov.pc-entry .pc-auth-card h2{font-size:28px;letter-spacing:-.04em;margin-bottom:10px}
+#pc-ov.pc-entry .pc-auth-card p{font-size:15px;line-height:1.6;color:#476457}
+#pc-ov.pc-entry .pc-auth-card label{font-size:14px;margin:16px 0 6px}
+#pc-ov.pc-entry .pc-auth-card input:not([type=checkbox]),#pc-ov.pc-entry .pc-auth-card select{border-radius:13px;border:1px solid #bcd6c8;background:#ffffffb3;min-height:50px;transition:border-color .2s,box-shadow .2s,background .2s}
+#pc-ov.pc-entry .pc-auth-card input:focus,#pc-ov.pc-entry .pc-auth-card select:focus{outline:2px solid #0E6B50;outline-offset:2px;background:#fff;box-shadow:0 0 0 6px #0E6B5014,0 5px 15px #0E6B5010}
+#pc-ov.pc-entry .pc-auth-card .pc-b{min-height:50px;border-radius:14px;background:linear-gradient(115deg,#0E6B50,#159772,#0E6B50);background-size:200% 100%;box-shadow:inset 0 1px 0 #ffffff44,0 8px 22px #0E6B5040;transition:transform .2s,box-shadow .2s,background-position .35s}
+#pc-ov.pc-entry .pc-auth-card .pc-b:hover{background-position:100% 0;box-shadow:0 0 0 3px #0E6B5014,0 12px 28px #0E6B5050}
+#pc-ov.pc-entry .pc-auth-card .pc-b.alt{background:#ffffffa8;color:#0E6B50;border:1px solid #bcd6c8;box-shadow:0 4px 12px #0E6B500a}
+#pc-ov.pc-entry .pc-auth-card .pc-legal{font-size:13px;align-items:flex-start}
+.pc-auth-art{position:relative;height:90px;max-width:320px;margin-top:28px;pointer-events:none;overflow:hidden;mask-image:linear-gradient(90deg,#000 75%,transparent)}
+.pc-auth-art i{display:block;position:absolute;width:250px;height:180px;left:20px;top:18px;transform:rotate(-22deg);border:1px solid #b7ffdb80;border-radius:50%;box-shadow:inset 0 5px 15px #aaffcf18,0 -3px 16px #8effbf26}
+.pc-auth-art i:nth-child(2){left:60px;top:35px;border-width:12px;border-color:#b7ffdb12;border-top-color:#b7ffdb55}.pc-auth-art i:nth-child(3){left:-20px;top:50px;border-color:#b7ffdb33}
+@keyframes pc-auth-in{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:none}}
+@media(max-width:760px){#pc-ov.gate.pc-entry{display:flex;flex-direction:column;justify-content:flex-start;align-items:center;gap:24px;padding:40px 18px 28px}#pc-ov.pc-entry .pc-hero{text-align:center;margin:0;width:100%}#pc-ov.pc-entry .pc-logo{width:54px;height:54px;line-height:54px;margin:0 auto 14px;border-radius:18px}#pc-ov.pc-entry .pc-name{font-size:36px}#pc-ov.pc-entry .pc-tag{font-size:16px;margin:10px auto 0;max-width:100%}#pc-ov.pc-entry .pc-lg{margin-top:16px}#pc-ov.pc-entry .pc-auth-art{display:none}#pc-ov.gate .pc-card.pc-auth-card{padding:24px;max-height:none;flex-shrink:0}#pc-ov.pc-entry .pc-auth-card h2{font-size:25px}}
+@media(prefers-reduced-motion:reduce){body .pc-choice,.pc-ripple,#pc-ov.gate .pc-card.pc-auth-card{animation:none!important}.pc-ripple{display:none}body button:active,body .pc-experience .card:hover,body .pc-experience .ow-hero:hover,body .wallet-deck>[data-a="w-edit"]:hover{transform:none!important}#pc-ov.pc-entry *{transition:none!important}}
+.pc-interactive{overflow:hidden}
