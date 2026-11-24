@@ -1,8 +1,8 @@
 // Plata Clara - service worker
 // Estrategia: red primero (siempre intenta bajar lo último), caché solo si no hay internet.
 const SCOPE = new URL(self.registration.scope).pathname;   // cada sitio (real / pruebas) tiene su propia caché
-const CACHE = 'plata-clara-v27b-menta-pruebas-' + SCOPE;
-const BASE = ['./', 'index.html', 'config.js', 'sync-model.js', 'dashboard.css?v=27', 'dashboard.js?v=27', 'cloud.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'notif-icon.png', 'badge.png', 'apple-touch-icon.png'];
+const CACHE = 'plata-clara-v28-verde-pruebas-' + SCOPE;
+const BASE = ['./', 'index.html', 'config.js', 'sync-model.js', 'dashboard.css?v=28', 'dashboard.js?v=28', 'cloud.js', 'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'notif-icon.png', 'badge.png', 'apple-touch-icon.png'];
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();

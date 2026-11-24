@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261123-menta-v27b">
+<meta name="pc-version" content="20261123-verde-v28">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B45309"><meta name="robots" content="noindex">
@@ -349,8 +349,8 @@ button:disabled{cursor:default;transform:none;filter:none}
 .soc:hover,.soc:focus-visible{border-color:var(--accent);color:var(--accent)}
 .soc svg{width:28px;height:28px}
 </style>
-<link rel="stylesheet" href="dashboard.css?v=27">
-<script defer src="dashboard.js?v=27"></script>
+<link rel="stylesheet" href="dashboard.css?v=28">
+<script defer src="dashboard.js?v=28"></script>
 </head>
 <body><div style="position:fixed;top:0;left:0;right:0;z-index:999;background:#B45309;color:#fff;font:600 12px system-ui;text-align:center;padding:2px">SITIO DE PRUEBAS · proyecto aislado</div>
 <div class="app">
@@ -929,9 +929,9 @@ function smallExpensesHTML(){
 }
 
 /* Cambiar id y notas juntos cuando se prepare una nueva entrega. Solo anunciar funciones incluidas. */
-var PC_RELEASE={id:'pruebas-menta27',title:'Una Plata Clara más luminosa',notes:[
+var PC_RELEASE={id:'pruebas-verde28',title:'Más verde, más Plata Clara',notes:[
  'Navegación y + Nuevo con brillo, elevación y respuesta al seleccionar.',
- 'Verde menta más claro en la app y en la entrada, conservando nuestra identidad.',
+ 'Más presencia del verde en las tarjetas, fondos y navegación.',
  'Diseño adaptado a celular y computadora.'
 ]};
 var releaseDismissed=false;
@@ -951,7 +951,7 @@ function releaseHTML(){return '';}
 function vResumen(){
   var k=ui.month,inc=sum(k,'Ingreso'),gas=sum(k,'Gasto');
   var wsR=wallets(S.cc),selW=ui.wal?walletOf(ui.wal):null,balR=selW?wBal(selW):wsR.reduce(function(a,w){return a+wBal(w);},0);
-  var h='<div class="dashboard"><header class="dash-heading"><div><p class="eyebrow">'+t('TU DINERO, DE UN VISTAZO')+'</p><h2>'+t('Todo en perspectiva')+'</h2></div>'+monthBar()+'</header>'+alertsHTML()+budgetAlertHTML()+owedAlertHTML();
+  var h='<div class="dashboard"><header class="dash-heading">'+monthBar()+'</header>'+alertsHTML()+budgetAlertHTML()+owedAlertHTML();
   h+='<div class="grid stats summary-stats">'
     +statTile(t('Mis billeteras'),money(balR),t('Saldo actual'),balR<0?'c-exp':'',true)
     +statTile(t('Ingresos'),money(inc),t('Este mes'),'c-inc')
