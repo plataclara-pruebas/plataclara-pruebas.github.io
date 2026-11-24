@@ -91,3 +91,6 @@ body[data-pc-view] input:focus-visible,body[data-pc-view] select:focus-visible,b
 @media(prefers-reduced-motion:no-preference){.pc-scene-enter{animation:pc-scene .32s cubic-bezier(.2,.7,.2,1)}.pc-experience .dash-reveal:not(.card):not(.list):not(.ow-hero){animation:dash-enter .5s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--dash-delay,0ms)}}
 @keyframes pc-scene{from{opacity:.55;transform:translateY(8px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.pc-experience *,.pc-scene-enter{animation:none!important;transition:none!important}.wallet-page [data-a="w-edit"]:hover{transform:none}}
+/* Keep long financial amounts inside narrow mobile statistic cards. */
+.pc-experience .stat .v{font-size:clamp(12px,calc(100cqw / (var(--len,10) * .64)),36px)}
+@media(max-width:699px){.pc-experience .hero .v{font-size:clamp(16px,calc(100cqw / (var(--len,10) * .65)),40px)}}
