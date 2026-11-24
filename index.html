@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261123-resumen-v22">
+<meta name="pc-version" content="20261123-dashboard-v24">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B45309"><meta name="robots" content="noindex">
@@ -349,6 +349,8 @@ button:disabled{cursor:default;transform:none;filter:none}
 .soc:hover,.soc:focus-visible{border-color:var(--accent);color:var(--accent)}
 .soc svg{width:28px;height:28px}
 </style>
+<link rel="stylesheet" href="dashboard.css">
+<script defer src="dashboard.js"></script>
 </head>
 <body><div style="position:fixed;top:0;left:0;right:0;z-index:999;background:#B45309;color:#fff;font:600 12px system-ui;text-align:center;padding:2px">SITIO DE PRUEBAS · proyecto aislado</div>
 <div class="app">
@@ -927,10 +929,10 @@ function smallExpensesHTML(){
 }
 
 /* Cambiar id y notas juntos cuando se prepare una nueva entrega. Solo anunciar funciones incluidas. */
-var PC_RELEASE={id:'pruebas-resumen22',title:'Un Resumen más limpio',notes:[
-  'Registra tus movimientos con + Nuevo, sin botones duplicados.',
-  'Billeteras en su sección; atajos en Movimientos.',
-  'Menos texto y detalles solo cuando los necesites.'
+var PC_RELEASE={id:'pruebas-dashboard24',title:'Tu nuevo dashboard',notes:[
+ 'Un Resumen organizado en tarjetas, con más espacio para tus gráficos y movimientos.',
+ 'Animaciones suaves al entrar, explorar tus gráficos y revisar tus billeteras.',
+ 'Diseño adaptado a celular y computadora.'
 ]};
 var releaseDismissed=false;
 function showRelease(){
@@ -949,17 +951,15 @@ function releaseHTML(){return '';}
 function vResumen(){
   var k=ui.month,inc=sum(k,'Ingreso'),gas=sum(k,'Gasto');
   var wsR=wallets(S.cc),selW=ui.wal?walletOf(ui.wal):null,balR=selW?wBal(selW):wsR.reduce(function(a,w){return a+wBal(w);},0);
-  var h=alertsHTML()+budgetAlertHTML()+owedAlertHTML()+monthBar();
+  var h='<div class="dashboard"><header class="dash-heading"><div><p class="eyebrow">'+t('TU DINERO, DE UN VISTAZO')+'</p><h2>'+t('Todo en perspectiva')+'</h2></div>'+monthBar()+'</header>'+alertsHTML()+budgetAlertHTML()+owedAlertHTML();
   h+='<div class="grid stats summary-stats">'
     +statTile(t('Mis billeteras'),money(balR),t('Saldo actual'),balR<0?'c-exp':'',true)
     +statTile(t('Ingresos'),money(inc),t('Este mes'),'c-inc')
     +statTile(t('Gastos'),money(gas),t('Este mes'),'c-exp')+'</div>';
   h+='<details class="summary-help"><summary>'+t('Cómo se calcula')+'</summary><p class="note">'+t('El saldo suma tus billeteras según lo registrado. Los ingresos y gastos corresponden al mes seleccionado.')+'</p></details>';
-  h+=smallExpensesHTML();
-  h+=ritmoHTML();
   h+=compareHTML(k,gas);
-  h+=walletsCard();
-  h+='<div class="grid two" style="margin-top:12px"><section class="card"><h2>'+t('Ingresos y gastos')+' <small>'+t('últimos 6 meses')+'</small></h2><div class="legend"><span class="li">'+t('Ingresos')+'</span><span class="le">'+t('Gastos')+'</span></div>'+chart()+'</section>';
+  h+='<div class="dash-workspace"><div class="dash-primary">';
+  h+='<div class="grid two dash-charts" style="margin-top:12px"><section class="card"><h2>'+t('Ingresos y gastos')+' <small>'+t('últimos 6 meses')+'</small></h2><div class="legend"><span class="li">'+t('Ingresos')+'</span><span class="le">'+t('Gastos')+'</span></div>'+chart()+'</section>';
   var sp=spentByCat(k),cats=Object.keys(sp).sort(function(a,b){return sp[b]-sp[a];}),top=cats.length?sp[cats[0]]:1;
   h+='<section class="card"><h2>'+t('Gasto por categoría')+' <small>'+monthLabel(k)+'</small></h2>';
   if(!cats.length)h+='<p class="empty">'+t('Aún no hay gastos este mes.')+'</p>';
@@ -970,6 +970,7 @@ function vResumen(){
     +(hasB?'<div class="bars">'+budgetRows(k,true)+'</div>':'<p class="empty">'+t('Define límites por categoría en la sección Presupuesto.')+'</p>')+'</section>';
   var recent=S.moves.filter(function(m){return mc(m)===S.cc&&wf(m);}).sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,5);
   h+='<section class="card"><h2>'+t('Últimos movimientos')+'</h2>'+(recent.length?'<div class="list" style="border:0;border-radius:0">'+recent.map(moveRow).join('')+'</div>':'<p class="empty">'+t('Registra tu primer movimiento con el botón “Nuevo”.')+'</p>')+'</section></div>';
+  h+='</div><aside class="dash-aside" aria-label="'+esc(t('Billeteras y herramientas'))+'">'+walletsCard()+ritmoHTML()+smallExpensesHTML()+'</aside></div></div>';
   return h;
 }
 function monthBar(){return '<div class="monthbar"><button class="step" data-a="mprev" aria-label="'+esc(t('Mes anterior'))+'">‹</button><div class="label" aria-live="polite">'+monthLabel(ui.month)+'</div><button class="step" data-a="mnext" aria-label="'+esc(t('Mes siguiente'))+'">›</button></div>';}
@@ -1529,6 +1530,8 @@ function render(){
   var v=spaceBar()+curBar()+(hog?vHogar():{resumen:vResumen,movimientos:vMovs,presupuesto:vPresu,ahorros:vAhorros,metas:vMetas,deudas:vDeudas,billeteras:vBilleteras}[ui.view]());
   if(ui.view==='movimientos'||ui.view==='resumen')v+='<button class="btn fab" data-a="new">'+t('+ Nuevo')+'</button>';
   document.getElementById('view').innerHTML=v;
+  document.body.dataset.pcView=hog?'hogar':ui.view;
+  document.getElementById('view').dataset.scene=[ui.view,ui.month,S.cc,ui.space].join(':');
   var sh=document.getElementById('sheet');
   var prevKind=sh.dataset.kind||'',nextKind=ui.sheet?ui.sheet.kind:'';
   var departing=!nextKind&&sh.firstElementChild;

@@ -1,0 +1,52 @@
+/* Dashboard: structure and motion retain Plata Clara's theme and financial semantics. */
+body[data-pc-view="resumen"] .main{max-width:1480px}
+.dash-heading{display:flex;align-items:center;justify-content:space-between;gap:20px;margin:12px 0 24px}
+.dash-heading .eyebrow{margin:0 0 6px;font-size:12px}
+.dash-heading h2{font-size:clamp(24px,3vw,34px);line-height:1.15;letter-spacing:-.04em}
+.dash-heading .monthbar{margin:0;flex-shrink:0;background:var(--surface);padding:5px;border:1px solid var(--line);border-radius:18px}
+.dash-heading .monthbar .label{min-width:8em;font-size:15px}
+.dash-heading .step{border:0;background:var(--surface2);min-height:44px;min-width:44px;border-radius:12px}
+.dashboard .card{border-radius:22px;padding:22px;box-shadow:0 2px 3px #10251d03,0 12px 32px #10251d06;transition:box-shadow .25s,border-color .25s,transform .25s}
+.dashboard .card h2{font-size:18px;align-items:center;flex-wrap:wrap;line-height:1.35;margin-bottom:20px}
+.dashboard .summary-stats{grid-template-columns:minmax(0,1.5fr) repeat(2,minmax(0,1fr));gap:18px}
+.dashboard .summary-stats>.hero{grid-column:auto;position:relative;overflow:hidden;isolation:isolate}
+.dashboard .hero:after{content:"";position:absolute;z-index:-1;width:230px;height:230px;border:40px solid currentColor;opacity:.065;border-radius:50%;right:-75px;bottom:-140px;pointer-events:none}
+.dashboard .stat{min-height:164px;justify-content:center;gap:10px}
+.dashboard .stat .k{font-size:13px;letter-spacing:.04em}
+.dashboard .stat .v{font-size:clamp(18px,calc(100cqw / (var(--len,10) * .64)),36px);line-height:1.2;letter-spacing:-.035em}
+.dashboard .stat .h{font-size:14px}
+.dashboard .summary-help{margin:8px 4px 0}
+.dash-workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:22px;margin-top:12px;align-items:start}
+.dash-primary,.dash-aside{min-width:0;display:grid;gap:22px}
+.dash-primary>.grid,.dash-aside>.card{margin-top:0!important}
+.dash-primary>.two{grid-template-columns:minmax(0,1fr)}
+.dash-primary .grid{gap:22px}
+.dashboard .chart{margin:16px 0 4px;overflow:visible}
+.dashboard .chart .grid-l{stroke-dasharray:3 7}
+.dashboard .chart rect{transform-box:fill-box;transform-origin:center bottom;transition:filter .2s,opacity .2s;outline:none}
+.dashboard .chart rect:focus-visible{stroke:var(--ink);stroke-width:2}
+.dashboard .chart rect:hover,.dashboard .chart rect:focus-visible{filter:brightness(1.2)}
+.dashboard .bar-row .hd{flex-wrap:wrap;font-size:14px}
+.dashboard .track{height:10px;border:0}
+.dashboard .fill{transform-origin:left center}
+.dashboard .bars{gap:18px}
+.dashboard .wallet-summary-row{gap:10px;padding:14px 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.dashboard .wallet-summary-row:last-child{border:0}
+.dashboard .wallet-summary-row .num{font-family:var(--f-display);font-weight:700;white-space:nowrap}
+.dashboard .wallet-summary-row>span:first-child:before{content:"";display:inline-block;width:10px;height:10px;border:3px solid var(--line);border-radius:5px;margin-right:9px}
+.dashboard .row{border-radius:12px;padding:16px 10px;transition:background .2s,transform .2s;flex-wrap:wrap}
+.dashboard .row .t{flex:1 1 140px}
+.dashboard .row .a{margin-left:auto}
+.dashboard .btn{border-radius:12px}
+.dashboard .section-summary{font-size:17px}
+.pc-chart-tip{position:fixed;z-index:35;pointer-events:none;max-width:calc(100vw - 24px);padding:10px 14px;background:var(--ink);color:var(--surface);box-shadow:var(--shadow);border-radius:12px;font-size:14px;white-space:pre-line}
+@media(min-width:1200px){body[data-pc-view="resumen"] .side{margin:18px 0 18px 16px;height:calc(100vh - 36px);top:18px;border:1px solid var(--line);border-radius:24px;background:var(--surface);padding-top:28px;box-shadow:var(--shadow)}body[data-pc-view="resumen"] .side .nav-btn{min-height:48px;margin-bottom:5px;border-radius:13px;transition:background .2s,transform .2s}body[data-pc-view="resumen"] .side .nav-btn[aria-current]{background:var(--surface2);box-shadow:inset 3px 0 var(--accent)}body[data-pc-view="resumen"] .main{padding-left:32px;padding-right:32px}}
+@media(min-width:1450px){.dash-primary>.dash-charts{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr)}}
+@media(max-width:1150px){.dash-workspace{grid-template-columns:minmax(0,1fr)}.dash-aside{grid-template-columns:repeat(2,minmax(0,1fr))}.dash-primary>.two{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:699px){.dash-heading{align-items:flex-start;flex-direction:column;gap:16px;margin:14px 0 20px}.dash-heading .monthbar{width:100%;justify-content:space-between}.dashboard .summary-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.dashboard .summary-stats>.hero{grid-column:1/-1;min-height:156px}.dashboard .stat{min-height:126px}.dashboard .card{padding:18px;border-radius:20px}.dash-workspace,.dash-primary,.dash-aside,.dash-primary .grid{gap:16px}.dash-primary>.two,.dash-aside{grid-template-columns:minmax(0,1fr)}.dashboard .card h2{margin-bottom:16px}.dashboard .hero .v{font-size:clamp(24px,calc(100cqw / (var(--len,10) * .65)),40px)}.dashboard .chart text{font-size:13px}}
+@media(hover:hover) and (prefers-reduced-motion:no-preference){.dashboard .card:hover{transform:translateY(-3px);box-shadow:0 10px 30px #10251d12;border-color:color-mix(in srgb,var(--accent) 32%,var(--line))}.dashboard .row:hover{transform:translateX(3px)}body[data-pc-view="resumen"] .side .nav-btn:hover{transform:translateX(3px)}}
+@keyframes dash-enter{from{opacity:.25;transform:translateY(18px) scale(.985)}to{opacity:1;transform:none}}
+@keyframes dash-grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+@keyframes dash-fill{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media(prefers-reduced-motion:no-preference){.dashboard .dash-reveal{animation:dash-enter .55s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--dash-delay,0ms)}.dashboard .dash-reveal .chart rect{animation:dash-grow .7s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--dash-delay,0ms) + 100ms)}.dashboard .dash-reveal .fill{animation:dash-fill .75s cubic-bezier(.2,.7,.2,1) both;animation-delay:calc(var(--dash-delay,0ms) + 120ms)}}
+@media(prefers-reduced-motion:reduce){.dashboard *,.side .nav-btn{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
