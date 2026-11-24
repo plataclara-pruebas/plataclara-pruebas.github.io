@@ -46,7 +46,7 @@
  var selector='button:not(:disabled),a[href],.seg label';
  function clear(){if(lit){lit.classList.remove('pc-lit');lit=null;}}
  document.addEventListener('pointermove',function(e){
-  if(!fine.matches||reduce.matches)return;
+  if(!fine.matches)return;
   var card=e.target.closest('.pc-experience .card,.pc-experience .ow-hero,.wallet-deck>[data-a="w-edit"]');
   if(card!==lit){clear();lit=card;if(lit)lit.classList.add('pc-lit');}
   if(!card||frame)return;
