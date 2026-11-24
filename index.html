@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261123-dashboard-v24">
+<meta name="pc-version" content="20261123-relieve-v25">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B45309"><meta name="robots" content="noindex">
@@ -929,9 +929,9 @@ function smallExpensesHTML(){
 }
 
 /* Cambiar id y notas juntos cuando se prepare una nueva entrega. Solo anunciar funciones incluidas. */
-var PC_RELEASE={id:'pruebas-dashboard24',title:'Tu nuevo dashboard',notes:[
- 'Un Resumen organizado en tarjetas, con más espacio para tus gráficos y movimientos.',
- 'Animaciones suaves al entrar, explorar tus gráficos y revisar tus billeteras.',
+var PC_RELEASE={id:'pruebas-relieve25',title:'Plata Clara, con más profundidad',notes:[
+ 'Un mismo diseño en Resumen, Movimientos, Billeteras, Presupuesto, Ahorros y Deudas.',
+ 'Tarjetas con relieve, luces, sombras y animaciones con los colores de Plata Clara.',
  'Diseño adaptado a celular y computadora.'
 ]};
 var releaseDismissed=false;
@@ -1059,10 +1059,10 @@ function vBilleteras(){
   var ws=wallets(S.cc),tot=ws.reduce(function(a,w){return a+wBal(w);},0);
   var h='<div class="actions" style="margin:6px 0 12px"><button class="btn sm" data-a="w-new">+ '+t('Nueva billetera')+'</button>'+(ws.length>1?'<button class="btn alt sm" data-a="x-new">'+t('Transferir')+'</button>':'')+(ws.some(function(w){return !w.cash;})?'<button class="btn alt sm" data-a="cash-new">'+t('Retirar o depositar efectivo')+'</button>':'')+'</div>';
   h+='<div class="grid stats">'+statTile(t('Total en billeteras'),money(tot),t('Suma de todas tus billeteras'),tot<0?'c-exp':'',true)+'</div>';
-  h+='<div class="card" style="padding:0;margin-top:12px;overflow:hidden">'+ws.map(function(w){var b=wBal(w),sv=wSaved(w);return '<button style="'+WROW+'cursor:pointer" data-a="w-edit" data-id="'+esc(w.id)+'"><span><b>'+esc(w.name)+'</b>'+(w.main?' ★':'')+(sv?'<br><small style="color:var(--muted)">'+t('Apartado')+' '+money(sv)+'</small>':'')+'</span><span class="num '+(b<0?'c-exp':'')+'">'+money(b)+'</span></button>';}).join('')+'</div>';
+  h+='<div class="wallet-deck" style="margin-top:12px">'+ws.map(function(w){var b=wBal(w),sv=wSaved(w);return '<button style="'+WROW+'cursor:pointer" data-a="w-edit" data-id="'+esc(w.id)+'"><span><b>'+esc(w.name)+'</b>'+(w.main?' ★':'')+(sv?'<br><small style="color:var(--muted)">'+t('Apartado')+' '+money(sv)+'</small>':'')+'</span><span class="num '+(b<0?'c-exp':'')+'">'+money(b)+'</span></button>';}).join('')+'</div>';
   var xs=(S.xfers||[]).filter(function(x){var a=walletOf(x.from);return a&&a.cc===S.cc;}).sort(function(a,b){return b.date.localeCompare(a.date);}).slice(0,8);
   if(xs.length)h+='<section class="card" style="margin-top:12px"><h2>'+t('Transferencias recientes')+'</h2>'+xs.map(function(x){var a=walletOf(x.from),b=walletOf(x.to),lb=x.kind==='retiro'?t('Retiro'):x.kind==='deposito'?t('Depósito'):'';return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;font-size:14px"><span>'+x.date+' · '+(lb?lb+' · ':'')+esc(a?a.name:'?')+' → '+esc(b?b.name:'?')+'</span><span class="num">'+money(x.amount)+' <button class="btn sm alt" data-a="x-del" data-id="'+esc(x.id)+'" aria-label="'+esc(t('Borrar'))+'">✕</button></span></div>';}).join('')+'</section>';
-  return h;
+  return '<div class="wallet-page">'+h+'</div>';
 }
 function nextKey(k){var p=k.split('-'),d=new Date(+p[0],+p[1],1);return d.getFullYear()+'-'+pad(d.getMonth()+1);}
 function prevKey(k){var p=k.split('-'),d=new Date(+p[0],+p[1]-2,1);return d.getFullYear()+'-'+pad(d.getMonth()+1);}

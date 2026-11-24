@@ -3,7 +3,7 @@
   'use strict';
   var scene='',observer=null,tip=null;
   var reduced=window.matchMedia('(prefers-reduced-motion: reduce)');
-  function hideTip(){if(tip){tip.remove();tip=null;}}
+  function hideTip(){document.querySelectorAll('[aria-describedby="pc-chart-tooltip"]').forEach(function(n){n.removeAttribute('aria-describedby');});if(tip){tip.remove();tip=null;}}
   function showTip(bar){
     hideTip();var title=bar.querySelector('title');if(!title)return;
     tip=document.createElement('div');tip.className='pc-chart-tip';tip.setAttribute('role','tooltip');tip.id='pc-chart-tooltip';tip.textContent=title.textContent;
@@ -16,14 +16,16 @@
     var view=document.getElementById('view');if(!view)return;
     var key=view.dataset.scene,animate=key!==scene;scene=key;
     if(observer)observer.disconnect();hideTip();
-    var dashboard=view.querySelector('.dashboard');if(!dashboard)return;
+    var dashboard=view;
+    view.classList.add('pc-experience');
+    if(animate&&!reduced.matches)view.classList.add('pc-scene-enter');else view.classList.remove('pc-scene-enter');
     dashboard.querySelectorAll('.chart rect').forEach(function(bar){
       var title=bar.querySelector('title');bar.setAttribute('tabindex','0');if(title)bar.setAttribute('aria-label',title.textContent);
       bar.addEventListener('pointerenter',function(){showTip(bar);});bar.addEventListener('pointerleave',hideTip);
       bar.addEventListener('focus',function(){showTip(bar);});bar.addEventListener('blur',hideTip);
     });
     if(!animate||reduced.matches)return;
-    var cards=dashboard.querySelectorAll('.card');
+    var cards=dashboard.querySelectorAll('.card,.list,.ow-hero,.wallet-deck>[data-a="w-edit"]');
     if(!('IntersectionObserver' in window))return;
     observer=new IntersectionObserver(function(entries){
       var i=0;entries.forEach(function(entry){if(entry.isIntersecting){entry.target.style.setProperty('--dash-delay',(i++*65)+'ms');entry.target.classList.add('dash-reveal');observer.unobserve(entry.target);}});
