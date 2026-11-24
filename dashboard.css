@@ -201,3 +201,24 @@ body[data-pc-view] .bottom{background:color-mix(in srgb,var(--surface2) 93%,tran
 .wallet-page .wallet-deck>[data-a="w-edit"]:nth-child(2n){background:radial-gradient(ellipse at 90% 0%,color-mix(in srgb,var(--accent) 12%,transparent),transparent 70%),linear-gradient(160deg,var(--surface),var(--surface2))!important}
 #pc-ov.gate.pc-entry{background:radial-gradient(ellipse at 0 0,#72dbab,transparent 65%),radial-gradient(ellipse at 100% 100%,#91e2ba,transparent 65%),#d7f2e5}
 @media(max-width:699px){.dash-heading{margin:4px 0 16px}}
+/* Chart / v29: luminous columns on quiet mint rails. All heights use one zero-based scale. */
+.chart-shell{border:1px solid color-mix(in srgb,var(--accent) 20%,var(--line));border-radius:20px;padding:14px 8px 6px;background:radial-gradient(ellipse at 50% 100%,color-mix(in srgb,var(--accent) 13%,transparent),transparent 65%),linear-gradient(165deg,var(--surface),var(--surface2));box-shadow:inset 0 1px 0 #ffffff80;min-width:0}
+.pc-experience .chart-future{margin:0;overflow:visible}
+.chart-future .chart-income-base{stop-color:var(--inc)}.chart-future .chart-income-light{stop-color:color-mix(in srgb,var(--inc) 38%,#b5ffdd)}
+.chart-future .chart-expense-base{stop-color:var(--exp)}.chart-future .chart-expense-light{stop-color:color-mix(in srgb,var(--exp) 40%,#ffd6bc)}
+.pc-experience .chart-future .grid-l{stroke:var(--accent);opacity:.12;stroke-dasharray:none}
+.chart-future .chart-month{cursor:pointer;outline:none}
+.chart-future .chart-hit{fill:var(--accent);opacity:0;transition:opacity .2s;stroke:var(--accent);stroke-width:1}
+.chart-future .chart-month:hover .chart-hit,.chart-future .chart-month.is-selected .chart-hit{opacity:.07}
+.chart-future .chart-month:focus-visible .chart-hit{opacity:.14;stroke-width:2}
+.chart-future .chart-rail{fill:none;stroke:var(--accent);opacity:.065;stroke-linecap:round;pointer-events:none}
+.pc-experience .chart-future .chart-bar.bi{fill:url(#pc-income);filter:drop-shadow(0 3px 5px color-mix(in srgb,var(--inc) 25%,transparent))}
+.pc-experience .chart-future .chart-bar.be{fill:url(#pc-expense);filter:drop-shadow(0 3px 5px color-mix(in srgb,var(--exp) 20%,transparent))}
+.pc-experience .chart-future .chart-bar{stroke:#ffffff55;stroke-width:1;transition:filter .22s,stroke .22s;pointer-events:none}
+.pc-experience .chart-future .chart-month:hover .chart-bar,.pc-experience .chart-future .chart-month:focus-visible .chart-bar,.pc-experience .chart-future .chart-month.is-selected .chart-bar{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--accent) 48%,transparent));stroke:#ffffffa0}
+.pc-experience .chart-future .chart-month-label{font-size:13px;font-weight:600;fill:var(--muted)}
+.pc-experience .chart-future .chart-month.is-selected .chart-month-label{fill:var(--accent);font-weight:700}
+.chart-hint{margin:7px 8px 2px;font-size:13px;color:var(--muted);text-align:center}
+.pc-chart-tip{white-space:pre-line;line-height:1.6;border:1px solid color-mix(in srgb,var(--accent) 60%,var(--line));box-shadow:0 8px 28px #083c2a30;padding:12px 16px}
+@media(prefers-reduced-motion:no-preference){.pc-experience .dash-reveal .chart-future .chart-bar{animation-delay:calc(var(--dash-delay,0ms) + var(--bar-delay,0ms))}}
+@media(max-width:699px){.chart-shell{padding:12px 0 6px}.pc-experience .chart-future .chart-month-label{font-size:16px}.chart-hint{font-size:13px}}

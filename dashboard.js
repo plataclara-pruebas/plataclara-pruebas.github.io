@@ -19,10 +19,11 @@
     var dashboard=view;
     view.classList.add('pc-experience');
     if(animate&&!reduced.matches)view.classList.add('pc-scene-enter');else view.classList.remove('pc-scene-enter');
-    dashboard.querySelectorAll('.chart rect').forEach(function(bar){
-      var title=bar.querySelector('title');bar.setAttribute('tabindex','0');if(title)bar.setAttribute('aria-label',title.textContent);
+    dashboard.querySelectorAll('.chart-month').forEach(function(bar){
+      function select(){bar.closest('svg').querySelectorAll('.chart-month').forEach(function(n){n.classList.toggle('is-selected',n===bar);n.setAttribute('aria-pressed',String(n===bar));});showTip(bar);}
       bar.addEventListener('pointerenter',function(){showTip(bar);});bar.addEventListener('pointerleave',hideTip);
       bar.addEventListener('focus',function(){showTip(bar);});bar.addEventListener('blur',hideTip);
+      bar.addEventListener('click',select);bar.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();select();}});
     });
     if(!animate||reduced.matches)return;
     var cards=dashboard.querySelectorAll('.card,.list,.ow-hero,.wallet-deck>[data-a="w-edit"]');
