@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261124-seguridad-v32">
+<meta name="pc-version" content="20261124-categorias-v33">
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://sqfobtlxvddmijafttog.supabase.co https://open.er-api.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -1124,19 +1124,23 @@ function featuresBlock(){
    +H3+t('Movimientos que se repiten')+'</h3>';
   var rs=S.recur||[];
   o+=rs.length?rs.map(function(r){return '<div style="'+row+'"><span>'+esc(r.desc||cname(r.cat))+' · '+money(r.amount,r.cc)+' · '+t('día {d} de cada mes',{d:r.day})+'</span><button class="btn sm alt" data-a="rec-del" data-id="'+esc(r.id)+'">'+t('Quitar')+'</button></div>';}).join(''):'<p class="note">'+t('Aún no hay movimientos que se repiten.')+'</p>';
-  o+=H3+t('Mis categorías')+'</h3>';
-  (S.cats||[]).forEach(function(c){o+='<div style="'+row+'"><span>'+esc(c)+'</span><span><button class="btn sm alt" data-a="cat-ren" data-c="'+esc(c)+'">'+t('Renombrar')+'</button> <button class="btn sm alt" data-a="cat-del" data-c="'+esc(c)+'">'+t('Quitar')+'</button></span></div>';});
-  o+='<div style="display:flex;gap:8px;margin-top:8px"><input id="nc" maxlength="24" placeholder="'+esc(t('Nueva categoría'))+'" style="flex:1"><button class="btn sm" data-a="cat-add">'+t('Agregar')+'</button></div>'
-   +H3+t('Exportar tus datos')+'</h3><div class="actions"><button class="btn alt sm" data-a="exp-csv">'+t('Descargar en Excel (CSV)')+'</button><button class="btn alt sm" data-a="exp-pdf">'+t('Imprimir o guardar PDF del mes')+'</button></div>';
+  o+=H3+t('Exportar tus datos')+'</h3><div class="actions"><button class="btn alt sm" data-a="exp-csv">'+t('Descargar en Excel (CSV)')+'</button><button class="btn alt sm" data-a="exp-pdf">'+t('Imprimir o guardar PDF del mes')+'</button></div>';
   var u=(window.PC_CONFIG&&window.PC_CONFIG.CONTACT_URL)||'';
   if(u)o+='<p style="margin-top:14px"><a class="btn alt sm" target="_blank" rel="noopener" href="'+esc(u+(u.indexOf('?')>-1?'&':'?')+'text='+encodeURIComponent('Hola, tengo una sugerencia para Plata Clara: '))+'">'+t('Enviar sugerencia')+'</a></p>';
   return o;
 }
+function categoriesBlock(){
+  var row='display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:14px';
+  var o='<section class="card" style="margin:12px 0"><h2>'+t('Mis categorías')+'</h2>';
+  (S.cats||[]).forEach(function(c){o+='<div style="'+row+'"><span>'+esc(c)+'</span><span><button class="btn sm alt" data-a="cat-ren" data-c="'+esc(c)+'">'+t('Renombrar')+'</button> <button class="btn sm alt" data-a="cat-del" data-c="'+esc(c)+'">'+t('Quitar')+'</button></span></div>';});
+  o+='<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"><input id="nc" maxlength="24" placeholder="'+esc(t('Nueva categoría'))+'" aria-label="'+esc(t('Nueva categoría'))+'" style="flex:1;min-width:0"><button class="btn sm" data-a="cat-add">'+t('Agregar')+'</button></div>';
+  return o+'</section>';
+}
 function vPresu(){
-  if(S.cc!==BC())return monthBar()+'<div class="card"><p class="empty">'+t('Los presupuestos están en {c}. Cambia a esa moneda para verlos.',{c:BC()})+'</p></div>';
+  if(S.cc!==BC())return monthBar()+categoriesBlock()+'<div class="card"><p class="empty">'+t('Los presupuestos están en {c}. Cambia a esa moneda para verlos.',{c:BC()})+'</p></div>';
   var k=ui.month,sp=spentByCat(k),tl=0,ts=0;
   CATS.forEach(function(c){if(S.budgets[c]){tl+=S.budgets[c];ts+=sp[c]||0;}});
-  var h=monthBar()+'<div class="grid stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">'
+  var h=monthBar()+categoriesBlock()+'<div class="grid stats" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">'
    +statTile(t('Presupuestado'),money(tl),t('Suma de tus límites'))
    +statTile(t('Gastado'),money(ts),t('En categorías con límite'),'c-exp')
    +statTile(ts>tl?t('Te pasaste'):t('Te queda'),money(Math.abs(tl-ts)),tl?t('{p}% usado',{p:Math.round(ts/tl*100)}):t('Aún sin límites'),ts>tl?'c-exp':'c-inc')+'</div>';
