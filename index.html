@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261124-origen-v31">
+<meta name="pc-version" content="20261124-seguridad-v32">
 <meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://sqfobtlxvddmijafttog.supabase.co https://open.er-api.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B45309"><meta name="robots" content="noindex">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1103,7 +1104,8 @@ function budgetAlertHTML(){
 }
 function exportCSV(){
   var rows=[['Fecha','Tipo','Categoría','Descripción','Monto','Moneda','Nota']];
-  S.moves.slice().sort(function(a,b){return a.date.localeCompare(b.date);}).forEach(function(m){rows.push([m.date,m.type,m.cat||'',m.desc||'',m.amount,mc(m),m.note||'']);});
+  var safe=function(v){v=String(v==null?'':v);return /^[=+\-@\t\r]/.test(v)?"'"+v:v;};  // evita que Excel/Sheets ejecuten formulas (CSV injection)
+  S.moves.slice().sort(function(a,b){return a.date.localeCompare(b.date);}).forEach(function(m){rows.push([m.date,safe(m.type),safe(m.cat),safe(m.desc),m.amount,mc(m),safe(m.note)]);});
   var csv='\ufeff'+rows.map(function(r){return r.map(function(v){v=String(v);return /[",\n;]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}).join(',');}).join('\r\n');
   try{var url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})),a=document.createElement('a');a.href=url;a.download='plata-clara-'+iso(new Date())+'.csv';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);toast(t('Listo'));}catch(e){toast('No se pudo descargar');}
 }

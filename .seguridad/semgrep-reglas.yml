@@ -1,0 +1,36 @@
+rules:
+  - id: pc-innerhtml-concatenado
+    languages: [javascript]
+    severity: WARNING
+    message: >-
+      innerHTML con valor dinámico. Todo dato del usuario debe pasar por esc() (escapa & < > " ').
+      Revisar a mano que cada interpolación sea numérica, constante o esc(...).
+    pattern-either:
+      - pattern: $EL.innerHTML = $A + $B
+      - pattern: $EL.innerHTML += $X
+    metadata: { cwe: "CWE-79" }
+  - id: pc-document-write
+    languages: [javascript]
+    severity: WARNING
+    message: document.write con datos dinámicos (ventana de impresión). Verificar esc() en cada valor.
+    pattern: $W.document.write($X + ...)
+    metadata: { cwe: "CWE-79" }
+  - id: pc-eval-o-function
+    languages: [javascript]
+    severity: ERROR
+    message: Evaluación dinámica de código.
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: new Function(...)
+      - pattern: setTimeout("...", ...)
+    metadata: { cwe: "CWE-95" }
+  - id: pc-secreto-supabase-en-cliente
+    languages: [generic]
+    severity: ERROR
+    message: Una clave secreta/service_role no debe estar en código de cliente.
+    pattern-regex: (sb_secret_[A-Za-z0-9_-]{16,}|SERVICE_ROLE_KEY\s*[:=]\s*['"][^'"]{20,})
+  - id: pc-localstorage-datos-sensibles
+    languages: [javascript]
+    severity: INFO
+    message: Revisar que localStorage no guarde tokens ni contraseñas (los datos financieros del usuario sí se guardan, ver informe).
+    pattern: localStorage.setItem($K, ...)

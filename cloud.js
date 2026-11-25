@@ -48,6 +48,9 @@
       if (window.supabase) return ok();
       var s = document.createElement('script');
       s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
+      // SRI: sha384 del archivo oficial 2.45.4 (idéntico al del paquete npm). Si cambias la versión, recalcula el hash.
+      s.integrity = 'sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o';
+      s.crossOrigin = 'anonymous';
       s.onload = ok; s.onerror = function () { fail(new Error('lib')); };
       document.head.appendChild(s);
     });

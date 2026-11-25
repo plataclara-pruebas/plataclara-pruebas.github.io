@@ -1,0 +1,17 @@
+# Reglas por defecto de Gitleaks + UNA excepción acotada:
+# la clave "publishable" de Supabase en config.js es pública por diseño (la seguridad la da la RLS).
+# La excepción solo cubre ese patrón en ese archivo: una sb_secret_ o service_role seguiría detectándose.
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Clave publishable de Supabase (pública por diseño) en config.js"
+paths = ['''^config\.js$''']
+regexes = ['''sb_publishable_[A-Za-z0-9_-]{20,}''']
+
+# Regla propia: las reglas por defecto NO detectan las claves secretas de Supabase (sb_secret_...).
+[[rules]]
+id = "supabase-secret-key"
+description = "Supabase secret key (nunca debe estar en el repositorio)"
+regex = '''sb_secret_[A-Za-z0-9_-]{20,}'''
+keywords = ["sb_secret_"]
