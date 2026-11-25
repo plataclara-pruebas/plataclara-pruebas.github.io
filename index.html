@@ -1,9 +1,9 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261124-categorias-v33">
+<meta name="pc-version" content="20261124-privacidad-v34">
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://sqfobtlxvddmijafttog.supabase.co https://open.er-api.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://sqfobtlxvddmijafttog.supabase.co https://open.er-api.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#B45309"><meta name="robots" content="noindex">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,7 +19,7 @@
 /* Seguro: si el módulo de cuenta no carga, no dejar la app bloqueada para siempre */
 window.addEventListener('load',function(){setTimeout(function(){if(!document.getElementById('pc-ov'))document.documentElement.classList.remove('pc-lock');},10000);});}</script>
 <style>.pc-lock .app,.pc-lock #sheet,.pc-lock #toast{visibility:hidden}</style>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: sidebar + content on desktop, bottom tab bar on phones. One accent (green), semantic colors per movement type. */
 :root{

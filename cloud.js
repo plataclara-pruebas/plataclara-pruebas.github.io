@@ -47,8 +47,8 @@
     return new Promise(function (ok, fail) {
       if (window.supabase) return ok();
       var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js';
-      // SRI: sha384 del archivo oficial 2.45.4 (idéntico al del paquete npm). Si cambias la versión, recalcula el hash.
+      s.src = 'vendor/supabase-js-2.45.4.umd.js';   // autoalojado (MIT): sin terceros en el arranque
+      // SRI: sha384 del archivo oficial 2.45.4 (idéntico al del paquete npm). Si cambias la versión, recalcula el hash y el nombre del archivo.
       s.integrity = 'sha384-0w2KAL2YHP6wKOkUDzkCDGgVvfmHnj02DHeQ6XcHOgTfFsGyonKOpShMH1x6nk9o';
       s.crossOrigin = 'anonymous';
       s.onload = ok; s.onerror = function () { fail(new Error('lib')); };
@@ -395,7 +395,7 @@
     var gate = !user || !!sticky;
     ov = document.createElement('div'); ov.id = 'pc-ov'; if (gate) ov.className = 'gate pc-entry';
     ov.innerHTML = (gate ? '<div class="pc-hero"><div class="pc-logo">S/</div><div class="pc-name">Plata Clara</div><div class="pc-tag">' + tr('Tus finanzas, claras y en orden') + '</div>' + langPick() + '<div class="pc-auth-art" aria-hidden="true"><i></i><i></i><i></i></div></div>' : '') +
-      '<div class="pc-card pc-auth-card" role="dialog" aria-modal="true">' + html + '</div>';
+      '<div class="pc-card pc-auth-card" role="dialog" aria-modal="true" aria-label="Plata Clara">' + html + '</div>';
     if (!gate) ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
     document.body.appendChild(ov);
     if (bind) bind(ov);
