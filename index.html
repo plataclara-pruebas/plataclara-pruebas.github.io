@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261124-privacidad-v34">
+<meta name="pc-version" content="20261126-hora-v35">
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://sqfobtlxvddmijafttog.supabase.co https://open.er-api.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -978,9 +978,18 @@ function vResumen(){
 }
 function monthBar(){return '<div class="monthbar"><button class="step" data-a="mprev" aria-label="'+esc(t('Mes anterior'))+'">‹</button><div class="label" aria-live="polite">'+monthLabel(ui.month)+'</div><button class="step" data-a="mnext" aria-label="'+esc(t('Mes siguiente'))+'">›</button></div>';}
 
+function moveTime(m){
+  // hora de registro: sale del id (uid empieza con Date.now() en base 36); ejemplos y recurrentes no la muestran
+  if(!m||m.seed||m.rid)return '';
+  var ts=parseInt(String(m.id||'').slice(0,8),36);
+  if(!ts||ts<1.6e12||ts>Date.now()+864e5)return '';
+  var d=new Date(ts),h=d.toLocaleTimeString(dateLoc(),{hour:'numeric',minute:'2-digit'});
+  return iso(d)===m.date?h:d.toLocaleDateString(dateLoc(),{day:'numeric',month:'short'})+', '+h;
+}
 function moveRow(m){
   var sign=m.type==='Ingreso'?'+':m.type==='Gasto'?'−':'';
   var sub=m.type==='Ahorro'||m.type==='Deuda'?t(TYPE_LABEL[m.type]):cname(m.cat);
+  var hr=moveTime(m);if(hr)sub=hr+' · '+sub;
   if(m.goalId){var g=S.goals.filter(function(x){return x.id===m.goalId;})[0];if(g)sub+=' · '+g.name;}
   if(m.w){var wl=walletOf(m.w);if(wl)sub+=' · '+wl.name;}
   if(m.fromSav)sub+=' · '+t('De mis ahorros');
