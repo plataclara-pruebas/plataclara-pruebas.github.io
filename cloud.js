@@ -394,7 +394,7 @@
     var orig = html; html = tr(html);
     var gate = !user || !!sticky;
     ov = document.createElement('div'); ov.id = 'pc-ov'; if (gate) ov.className = 'gate pc-entry';
-    ov.innerHTML = (gate ? '<div class="pc-hero"><div class="pc-logo">S/</div><div class="pc-name">Plata Clara</div><div class="pc-tag">' + tr('Tus finanzas, claras y en orden') + '</div>' + langPick() + '<div class="pc-auth-art" aria-hidden="true"><i></i><i></i><i></i></div></div>' : '') +
+    ov.innerHTML = (gate ? '<div class="pc-hero"><div class="pc-logo"><img src="icon.svg" alt="" width="72" height="72"></div><div class="pc-name">Plata Clara</div><div class="pc-tag">' + tr('Tus finanzas, claras y en orden') + '</div>' + langPick() + '<div class="pc-auth-art" aria-hidden="true"><i></i><i></i><i></i></div></div>' : '') +
       '<div class="pc-card pc-auth-card" role="dialog" aria-modal="true" aria-label="Plata Clara">' + html + '</div>';
     if (!gate) ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
     document.body.appendChild(ov);
