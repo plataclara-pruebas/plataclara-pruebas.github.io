@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261128-instalar-v42">
+<meta name="pc-version" content="20261128-inicio-v43">
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://sqfobtlxvddmijafttog.supabase.co https://open.er-api.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -17,8 +17,16 @@
 <script src="config.js"></script>
 <script>if(window.PC_CONFIG&&PC_CONFIG.SUPABASE_URL&&PC_CONFIG.SUPABASE_ANON_KEY){document.documentElement.classList.add('pc-lock');
 /* Seguro: si el módulo de cuenta no carga, no dejar la app bloqueada para siempre */
-window.addEventListener('load',function(){setTimeout(function(){if(!document.getElementById('pc-ov'))document.documentElement.classList.remove('pc-lock');},10000);});}</script>
-<style>.pc-lock .app,.pc-lock #sheet,.pc-lock #toast{visibility:hidden}</style>
+window.addEventListener('load',function(){setTimeout(function(){if(!window.__pcCloud&&!document.getElementById('pc-ov'))document.documentElement.classList.remove('pc-lock');},10000);});}</script>
+<style>.pc-lock .app,.pc-lock #sheet,.pc-lock #toast{visibility:hidden}
+/* Pantalla inicial: se pinta con el primer HTML (sin esperar scripts), mismas medidas y verde del acceso. */
+#pc-boot{display:none}.pc-lock #pc-boot{display:flex;position:fixed;inset:0;z-index:90;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:radial-gradient(ellipse at 0 0,#72dbab,transparent 65%),radial-gradient(ellipse at 100% 100%,#91e2ba,transparent 65%),#d7f2e5;color:#0b4a37}
+#pc-boot img{width:72px;height:72px;border-radius:20px;box-shadow:0 14px 30px -8px #0a513c66,0 0 0 6px #ffffff8c}
+#pc-boot b{font:700 30px/1.1 "Bricolage Grotesque","Trebuchet MS",system-ui,sans-serif;letter-spacing:-.03em}
+#pc-boot .pc-boot-bar{display:block;width:132px;height:4px;border-radius:4px;background:#0e6b5022;overflow:hidden}
+#pc-boot .pc-boot-bar i{display:block;width:40%;height:100%;border-radius:4px;background:#0e6b50;animation:pc-boot-slide 1.1s ease-in-out infinite;will-change:transform}
+@keyframes pc-boot-slide{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}
+@media(prefers-reduced-motion:reduce){#pc-boot .pc-boot-bar i{animation:none;width:100%;opacity:.45}}</style>
 <link rel="stylesheet" href="fonts/fonts.css">
 <style>
 /* Layout: sidebar + content on desktop, bottom tab bar on phones. One accent (green), semantic colors per movement type. */
@@ -350,10 +358,10 @@ button:disabled{cursor:default;transform:none;filter:none}
 .soc:hover,.soc:focus-visible{border-color:var(--accent);color:var(--accent)}
 .soc svg{width:28px;height:28px}
 </style>
-<link rel="stylesheet" href="dashboard.css?v=32">
-<script defer src="dashboard.js?v=30"></script>
+<link rel="stylesheet" href="dashboard.css?v=33">
+<script defer src="dashboard.js?v=31"></script>
 </head>
-<body><div style="position:fixed;top:0;left:0;right:0;z-index:999;background:#B45309;color:#fff;font:600 12px system-ui;text-align:center;padding:2px">Plata Clara Beta</div>
+<body><div style="position:fixed;top:0;left:0;right:0;z-index:999;background:#B45309;color:#fff;font:600 12px system-ui;text-align:center;padding:2px">Plata Clara Beta</div><div id="pc-boot" role="status" aria-label="Cargando Plata Clara Beta"><img src="icon.svg" alt="" width="72" height="72"><b>Plata Clara</b><span class="pc-boot-bar" aria-hidden="true"><i></i></span></div>
 <div class="app">
   <aside class="side" id="side"></aside>
   <main class="main">

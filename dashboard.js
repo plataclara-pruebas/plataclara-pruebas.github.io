@@ -14,7 +14,7 @@
   }
   function enhance(){
     var view=document.getElementById('view');if(!view)return;
-    var key=view.dataset.scene,animate=key!==scene;scene=key;
+    var key=view.dataset.scene,animate=scene!==''&&key!==scene&&!document.documentElement.classList.contains('pc-lock');scene=key;/* la primera escena (apertura) no se anima: antes se animaba a escondidas o, sin red, movia el contenido */
     if(observer)observer.disconnect();hideTip();
     var dashboard=view;
     view.classList.add('pc-experience');

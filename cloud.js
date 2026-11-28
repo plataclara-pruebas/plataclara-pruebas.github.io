@@ -4,6 +4,7 @@
   'use strict';
   var C = window.PC_CONFIG || {};
   if (!C.SUPABASE_URL || !C.SUPABASE_ANON_KEY) return;
+  window.__pcCloud = true;   // el respaldo de 10 s de index.html ya no debe desbloquear: aqui se decide
 
   var SYNC_KEY = ((window.PC_CONFIG && window.PC_CONFIG.PREFIX) || '') + 'plataclara.sync', consentOK = false;
   var sb = null, user = null, pushTimer = null, pushing = false, pending = false, status = 'idle', applying = false;
@@ -63,18 +64,19 @@
         var prev = user && user.id;
         user = session ? session.user : null;
         if (!user) { consentOK = false; window.PCPlan = null; window.PCAdmin = false; window.dispatchEvent(new Event('pcplan')); try { window.__pc.hReset(); } catch (e) {} }
+        if (!user) { enterUid = null; entering = null; firstDone = false; }
         if (!user && ev === 'SIGNED_OUT') { lock(); accessSheet(); }
         paint();
-        if (user && user.id !== prev && ev !== 'TOKEN_REFRESHED') { checkConsent().then(function (ok) { if (ok) { paint(); reconcile(); syncPush(); setTimeout(offerPushOnce, 3000); setTimeout(offerInstallOnce, 4500); } }); }
+        if (user && user.id !== prev && ev !== 'TOKEN_REFRESHED') { enter().then(function (ok) { if (ok) { syncPush(); setTimeout(offerPushOnce, 3000); setTimeout(offerInstallOnce, 4500); } }); }
       });
       return sb;
     });
   }
 
   /* ---------- sincronización ---------- */
-  function setStatus(s) {
+  function setStatus(s, quiet) {
     clearTimeout(successTimer); successTimer = null;
-    status = s; successVisible = s === 'ok'; paint();
+    status = s; successVisible = s === 'ok' && !quiet; paint();
     if (s === 'ok' && !getMark().dirty) successTimer = setTimeout(function () {
       if (status === 'ok' && !getMark().dirty) { successVisible = false; mergeNotice = ''; paint(); }
     }, mergeNotice ? 8000 : 3000);
@@ -156,12 +158,14 @@
     if (!sb || !user) return;
     sb.rpc('is_admin').then(function (r) { window.PCAdmin = r.data === true; window.dispatchEvent(new Event('pcplan')); }, function () {});
   }
+  var reconciling = null;
   function reconcile() {
+    if (reconciling) return reconciling;   // una sola lectura en curso (arranque, volver a la app y reconexion coinciden)
     loadPlan();
     if (!user || pushing) return inflight || Promise.resolve();
     var readAt = getMark().at, readUid = user.id;
     setStatus('saving');
-    return sb.from('user_data').select('data,updated_at').eq('user_id', user.id).maybeSingle().then(function (r) {
+    reconciling = sb.from('user_data').select('data,updated_at').eq('user_id', user.id).maybeSingle().then(function (r) {
       if (r.error) { setStatus('error'); return; }
       var row = r.data, mark = getMark(), local = st();
       if (!user || user.id !== readUid || mark.at !== readAt) return;
@@ -171,19 +175,20 @@
           if (mark.dirty) return mergeRemote(row, 0);
           return applyRemote(row);
         }
-        if (mark.dirty === false) { setStatus('ok'); return; } // al día y sin pendientes: nada que subir
+        if (mark.dirty === false) { setStatus('ok', true); return; } // al día y sin pendientes: nada que subir ni anunciar
         return pushNow();                                      // pendientes (o marca antigua sin "dirty"): subida condicional
       }
       if (!hasUserData(local)) return applyRemote(row);        // dispositivo sin datos propios: bajar la nube
       setStatus('ok'); chooseSheet(row);                       // ambos tienen datos: que decida la persona
-    }, function () { setStatus('error'); }).then(function () { try { window.__pc.maybeTour(); } catch (e) {} try { window.__pc.hInit(); } catch (e) {} });
+    }, function () { setStatus('error'); }).then(function () { reconciling = null; firstReady(); try { window.__pc.maybeTour(); } catch (e) {} try { window.__pc.hInit(); } catch (e) {} });
+    return reconciling;
   }
 
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && user && !pushing && !pushTimer) reconcile();   // pushTimer vuelve a null tras cada subida
-    else if (!document.hidden && !user && getMark().uid && navigator.onLine !== false) boot();
+    else if (!document.hidden && !user && getMark().uid && navigator.onLine !== false) boot(true);
   });
-  window.addEventListener('online', function () { if (user) reconcile(); else if (getMark().uid) boot(); });
+  window.addEventListener('online', function () { if (user) reconcile(); else if (getMark().uid) boot(true); });
   window.addEventListener('offline', function () { if (user || getMark().uid) setStatus('offline'); });
 
   /* ---------- avisos de cuotas (notificaciones push) ---------- */
@@ -594,7 +599,7 @@
     }
     if (s === 'error') {
       show('<h2>No se pudo verificar</h2><p>Revisa tu internet e inténtalo de nuevo.</p><div class="pc-m"></div><button class="pc-b" data-r>Reintentar</button><button class="pc-l" data-o>Cerrar sesión</button>', function (o) {
-        out(o); o.querySelector('[data-r]').onclick = function () { checkConsent().then(function (ok) { if (ok) { paint(); reconcile(); } }); };
+        out(o); o.querySelector('[data-r]').onclick = function () { entering = null; enter(); };
       }, true);
       return;
     }
@@ -844,7 +849,7 @@
   syncBar.innerHTML = '<span role="status" aria-live="polite" aria-atomic="true"></span><button type="button" hidden>Reintentar</button>';
   var top = document.querySelector('.top'); if (top) top.insertAdjacentElement('afterend', syncBar);
   var syncStyle = document.createElement('style');
-  syncStyle.textContent = '#pc-sync-status{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin:0 0 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;line-height:1.5}#pc-sync-status[hidden]{display:none}#pc-sync-status span{flex:1;min-width:160px}#pc-sync-status button{min-height:48px;min-width:48px;padding:8px 14px;background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:10px;font:inherit}';
+  syncStyle.textContent = '#pc-sync-status{position:fixed;z-index:60;left:50%;top:calc(env(safe-area-inset-top,0px) + 26px);transform:translateX(-50%);width:min(560px,calc(100vw - 24px));box-sizing:border-box;box-shadow:0 10px 28px -12px #0a513c59;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 14px;margin:0;border:1px solid var(--line);border-radius:12px;background:var(--surface);color:var(--ink);font-size:14px;line-height:1.5}#pc-sync-status[hidden]{display:none}#pc-sync-status span{flex:1;min-width:160px}#pc-sync-status button{min-height:48px;min-width:48px;padding:8px 14px;background:var(--surface2);color:var(--ink);border:1px solid var(--line);border-radius:10px;font:inherit}';
   document.head.appendChild(syncStyle);
   syncBar.querySelector('button').onclick = function () { if (user) reconcile(); else boot(); };
   function paintSync() {
@@ -854,7 +859,7 @@
       if (status === 'offline' || navigator.onLine === false) text = 'Sin conexión. ' + (m.dirty ? changes + ', guardados en este dispositivo. Se subirán al volver.' : 'Tus datos siguen en este dispositivo.');
       else if (status === 'error') { text = 'No se pudo sincronizar. ' + (m.dirty ? changes + ', guardados en este dispositivo.' : 'Revisa tu conexión e inténtalo de nuevo.'); retry = true; }
       else if (status === 'conflict') { text = 'Hay cambios por revisar. Tus cambios siguen en este dispositivo.'; retry = true; }
-      else if (status === 'saving' || m.dirty) text = 'Subiendo… ' + (m.dirty ? changes + ', guardados en este dispositivo.' : 'Comprobando tu cuenta.');
+      else if (m.dirty) text = 'Subiendo… ' + changes + ', guardados en este dispositivo.';
       else if (status === 'ok' && successVisible) text = mergeNotice || 'En tu cuenta ✓';
     }
     syncBar.hidden = !text;
@@ -866,7 +871,7 @@
   }
   function paint() {
     if (syncBar) paintSync();
-    if (user && consentOK) unlock();
+    if (user && consentOK && (firstDone || getMark().uid === user.id)) unlock();
     if ((user && user.id) !== lastUid) { lastUid = user && user.id; nt.err = ''; refreshNotif(); }
     if (!btn) return;
     btn.classList.toggle('on', !!user);
@@ -881,19 +886,63 @@
     }).catch(function () { show('<h2>Sin conexión</h2><p>No se pudo cargar el inicio de sesión. Revisa tu internet.</p><button class="pc-b" data-x>Cerrar</button>', function (o) { o.querySelector('[data-x]').onclick = close; }); });
   });
 
-  /* Compuerta: la app no se ve hasta ingresar. */
-  function boot() {
+  /* Arranque coordinado: boot() y onAuthStateChange llegan aqui; una sola comprobacion y una sola lectura por cuenta. */
+  var entering = null, enterUid = null, firstDone = false;
+  function enter() {
+    if (!user) return Promise.resolve(false);
+    if (entering && enterUid === user.id) return entering;
+    enterUid = user.id; firstDone = getMark().uid === user.id;   // dispositivo conocido: sus datos locales ya son de esta cuenta
+    var uid = user.id;
+    entering = checkConsent().then(function (ok) {
+      if (!ok || !user || user.id !== uid) { if (!ok) entering = null; return false; }
+      if (ov && !firstDone) close();   // cierra el acceso; mientras llega la nube se ve la pantalla inicial, no datos de ejemplo
+      paint(); reconcile(); return true;
+    });
+    return entering;
+  }
+  // Primer resultado de la nube en un dispositivo nuevo: recien ahora se muestran los datos (nunca los de ejemplo u otra cuenta).
+  function firstReady() {
+    if (!user || firstDone) return;
+    if (getMark().uid === user.id) { firstDone = true; paint(); return; }   // ya bajo o subio los datos de esta cuenta
+    if (ov) return;   // hay una pregunta abierta (que datos conservar): la app sigue oculta hasta que responda
+    if (status === 'error') show('<h2>No se pudieron cargar tus datos</h2><p>Revisa tu conexión e inténtalo de nuevo. Tus datos están a salvo en tu cuenta.</p><button class="pc-b" data-r>Reintentar</button><button class="pc-l" data-o>Cerrar sesión</button>', function (o) {
+      o.querySelector('[data-r]').onclick = function () { close(); reconcile(); };
+      o.querySelector('[data-o]').onclick = function () { sb.auth.signOut().then(function () { wipeLocal(); }); };
+    }, true);
+  }
+  // Sin red se muestra la app enseguida: esperar a las fuentes (no a un temporizador) evita que el texto salte al cambiar de letra.
+  function unlockReady() {
+    var go = function () { unlock(); };
+    // Tambien espera a DOMContentLoaded: ahi ya corrio dashboard.js (defer), que da su estilo final a la vista.
+    var dom = document.readyState === 'loading' ? new Promise(function (r) { document.addEventListener('DOMContentLoaded', r, { once: true }); }) : Promise.resolve();
+    var fonts; try { fonts = Promise.all([document.fonts.load('400 16px Figtree'), document.fonts.load('700 16px "Bricolage Grotesque"')]); } catch (e) { fonts = Promise.resolve(); }
+    Promise.all([dom, fonts.catch(function () {})]).then(go, go);
+  }
+  // Respaldo, no la solucion principal: si nada respondio en 20 s, no dejar la pantalla inicial para siempre.
+  var wdTimer = null;
+  function watchdog() {
+    clearTimeout(wdTimer);
+    wdTimer = setTimeout(function () {
+      if (!root.classList.contains('pc-lock') || ov) return;
+      show('<h2>Está tardando más de lo normal</h2><p>Revisa tu conexión e inténtalo de nuevo.</p><button class="pc-b" data-r>Reintentar</button>', function (o) { o.querySelector('[data-r]').onclick = function () { location.reload(); }; }, true);
+    }, 20000);
+  }
+  /* Compuerta: la app no se ve hasta ingresar. again=true: reintento silencioso (volver a la app, reconexion) sin tapar lo que la persona usa. */
+  function boot(again) {
     // Un dispositivo conocido puede abrir y guardar sin esperar la librería de acceso ni la red.
-    if (navigator.onLine === false && getMark().uid) { unlock(); setStatus('offline'); return; }
-    lock();
-    show('<h2>Cargando…</h2><p>Un momento.</p>');
+    if (navigator.onLine === false && getMark().uid) { unlockReady(); setStatus('offline'); return; }
+    if (again !== true) { lock(); watchdog(); }
+    // Sin sesion guardada ni enlace de acceso en la URL: el acceso no necesita esperar la libreria.
+    var saved = false; try { saved = Object.keys(localStorage).some(function (k) { return /^sb-.*-auth-token$/.test(k); }); } catch (e) { saved = true; }
+    if (again !== true && !saved && !/access_token|refresh_token|[?&]code=|error_description/.test(location.hash + location.search)) accessSheet();
     client().then(function () { return sb.auth.getSession(); }).then(function (r) {
-      if (r.data.session) { if (!user) { user = r.data.session.user; } checkConsent().then(function (ok) { if (ok) { paint(); reconcile(); } }); }
-      else accessSheet();
+      if (r.data.session) { if (!user) { user = r.data.session.user; } enter(); }
+      else if (again !== true && !(ov && ov.querySelector('[data-m]'))) accessSheet();
     }).catch(function () {
-      if (getMark().uid) { unlock(); setStatus('offline'); return; }   // dejar usar sin internet y marcar también guardados sin sesión cargada
+      if (getMark().uid) { unlockReady(); setStatus('offline'); return; }   // dejar usar sin internet y marcar también guardados sin sesión cargada
+      if (again === true) return;
       show('<h2>Sin conexión</h2><p>Necesitas internet para ingresar la primera vez.</p><button class="pc-b" data-r>Reintentar</button>',
-        function (o) { o.querySelector('[data-r]').onclick = boot; });
+        function (o) { o.querySelector('[data-r]').onclick = function () { boot(); }; });
     });
   }
   var ctoken = null; try { ctoken = new URLSearchParams(location.search).get('consent'); } catch (e) {}

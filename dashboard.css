@@ -190,7 +190,9 @@ body .nav-btn.pc-choice,body .fab.pc-choice{animation:pc-select-pop .45s cubic-b
 @media(prefers-reduced-motion:reduce) and (hover:hover) and (pointer:fine){body .nav-btn:hover:after,body .fab:hover:after{transform:none;animation:pc-soft-glow .65s ease-in-out!important}}
 /* Verde / v28: green carries the surfaces; white is reserved for highlights. */
 :root:not([data-theme="dark"]){--bg:#d7f2e5;--surface:#ecfaf2;--surface2:#c5ecda;--line:#a5d7bd;--ink:#103e2c;--muted:#3e6551}
-body[data-pc-view]{background:radial-gradient(ellipse at 2% 0%,#8edab655,transparent 55%),radial-gradient(ellipse at 98% 90%,#80d3ac30,transparent 55%),var(--bg)}
+body[data-pc-view]{background:var(--bg)}
+/* v43: mismo verde del acceso detras de la app. Capa fija aparte (no repinta al desplazar). */
+:root:not([data-theme="dark"]) body[data-pc-view]:before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 0 0,#72dbab,transparent 65%),radial-gradient(ellipse at 100% 100%,#91e2ba,transparent 65%),#d7f2e5}
 .dash-heading{justify-content:flex-start;margin:8px 0 20px}
 .pc-experience .card,.pc-experience .list,.pc-experience .ow-hero{background:linear-gradient(145deg,color-mix(in srgb,var(--surface2) 65%,var(--surface)),var(--surface) 85%);border-color:var(--line);box-shadow:inset 0 1px 0 #ffffff80,0 7px 14px -10px #087b5944,0 20px 34px -24px #087b5966}
 .pc-experience .stat.hero{background:radial-gradient(ellipse at 90% 0%,#b4f8d880,transparent 60%),linear-gradient(120deg,#56cb98,#98e4be);color:#103e2c;border-color:#59bc8c;box-shadow:inset 0 1px #c0ffdf,0 14px 28px -15px #087b5980}
@@ -240,9 +242,12 @@ body[data-pc-view] .bottom{background:color-mix(in srgb,var(--surface2) 93%,tran
 @keyframes pc-spin-r{to{transform:rotate(-396deg)}}
 @keyframes pc-aurora{0%{background-position:0% 0%,100% 100%,0 0}50%{background-position:30% 20%,70% 80%,0 0}100%{background-position:0% 0%,100% 100%,0 0}}
 @keyframes pc-ring{0%{transform:rotate(-22deg) scale(1)}50%{transform:rotate(158deg) scale(1.08)}100%{transform:rotate(338deg) scale(1)}}
-@keyframes pc-glow{0%,100%{filter:drop-shadow(0 0 2px #5fe3a8aa)}50%{filter:drop-shadow(0 0 14px #5fe3a8)}}
+/* v43: el brillo cambia opacidad (compositor) en vez de filter, que repintaba cada cuadro en celulares. */
+@keyframes pc-glow{0%,100%{opacity:.6}50%{opacity:1}}
 @keyframes pc-logo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
-#pc-ov.gate.pc-entry{background-size:160% 160%,160% 160%,auto;animation:pc-aurora 14s ease-in-out infinite}
+#pc-ov.gate.pc-entry:before,#pc-ov.gate.pc-entry:after,#pc-ov.pc-entry .pc-auth-art i{will-change:transform,opacity}
+/* El fondo grande ya no anima background-position (repintaba toda la pantalla); el movimiento lo llevan los anillos. */
+#pc-ov.gate .pc-card.pc-auth-card{backdrop-filter:none;-webkit-backdrop-filter:none}
 #pc-ov.gate.pc-entry:before{transform:rotate(-28deg);border-top-color:#2fbf86aa;border-right-color:#2fbf8633;animation:pc-spin 28s linear infinite,pc-glow 4s ease-in-out infinite}
 #pc-ov.gate.pc-entry:after{transform:rotate(-36deg);border-top-color:#2fbf8680;border-left-color:#2fbf8626;animation:pc-spin-r 36s linear infinite,pc-glow 5s ease-in-out infinite -2s}
 #pc-ov.pc-entry .pc-auth-art i{border-top-color:#2fbf86cc;animation:pc-ring 10s linear infinite,pc-glow 3s ease-in-out infinite}
