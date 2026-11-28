@@ -2,7 +2,7 @@
 // Estrategia: red primero (siempre intenta bajar lo último), caché solo si no hay internet.
 const SCOPE = new URL(self.registration.scope).pathname;   // cada sitio (real / pruebas) tiene su propia caché
 const CACHE = 'plata-clara-v41-cobros-' + SCOPE;
-const BASE = ['./', 'index.html', 'config.js', 'sync-model.js', 'dashboard.css?v=31', 'fonts/fonts.css', 'vendor/supabase-js-2.45.4.umd.js', 'dashboard.js?v=30', 'cloud.js', 'manifest.webmanifest', 'icon-192.png?v=38', 'icon-512.png?v=38', 'icon.svg?v=38', 'icon-maskable-512.png?v=38', 'notif-icon.png', 'badge.png', 'apple-touch-icon.png?v=38'];
+const BASE = ['./', 'index.html', 'config.js', 'sync-model.js', 'dashboard.css?v=32', 'fonts/fonts.css', 'vendor/supabase-js-2.45.4.umd.js', 'dashboard.js?v=30', 'cloud.js', 'manifest.webmanifest', 'icon-192.png?v=40', 'icon-512.png?v=40', 'icon.svg?v=38', 'icon-maskable-512.png?v=40', 'notif-icon.png', 'badge.png', 'apple-touch-icon.png?v=40'];
 
 self.addEventListener('install', function (e) {
   self.skipWaiting();

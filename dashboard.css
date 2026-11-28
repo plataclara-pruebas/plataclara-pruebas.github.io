@@ -235,3 +235,19 @@ body[data-pc-view] .bottom{background:color-mix(in srgb,var(--surface2) 93%,tran
 #pc-ov.pc-entry .pc-auth-card .pc-l:hover{text-decoration:underline}
 #pc-ov.pc-entry .pc-auth-card .pc-l+br{display:none}
 @media(max-width:760px){#pc-ov.pc-entry .pc-logo{width:64px;height:64px;border-radius:18px}#pc-ov.gate.pc-entry{gap:20px}}
+/* Acceso v40: fondo futurista en movimiento continuo (orbitas que giran, brillo que recorre los anillos, aurora que respira). */
+@keyframes pc-spin{to{transform:rotate(332deg)}}
+@keyframes pc-spin-r{to{transform:rotate(-396deg)}}
+@keyframes pc-aurora{0%{background-position:0% 0%,100% 100%,0 0}50%{background-position:30% 20%,70% 80%,0 0}100%{background-position:0% 0%,100% 100%,0 0}}
+@keyframes pc-ring{0%{transform:rotate(-22deg) scale(1)}50%{transform:rotate(158deg) scale(1.08)}100%{transform:rotate(338deg) scale(1)}}
+@keyframes pc-glow{0%,100%{filter:drop-shadow(0 0 2px #5fe3a8aa)}50%{filter:drop-shadow(0 0 14px #5fe3a8)}}
+@keyframes pc-logo-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+#pc-ov.gate.pc-entry{background-size:160% 160%,160% 160%,auto;animation:pc-aurora 14s ease-in-out infinite}
+#pc-ov.gate.pc-entry:before{transform:rotate(-28deg);border-top-color:#2fbf86aa;border-right-color:#2fbf8633;animation:pc-spin 28s linear infinite,pc-glow 4s ease-in-out infinite}
+#pc-ov.gate.pc-entry:after{transform:rotate(-36deg);border-top-color:#2fbf8680;border-left-color:#2fbf8626;animation:pc-spin-r 36s linear infinite,pc-glow 5s ease-in-out infinite -2s}
+#pc-ov.pc-entry .pc-auth-art i{border-top-color:#2fbf86cc;animation:pc-ring 10s linear infinite,pc-glow 3s ease-in-out infinite}
+#pc-ov.pc-entry .pc-auth-art i:nth-child(2){animation-duration:14s,4s;animation-direction:reverse,normal}
+#pc-ov.pc-entry .pc-auth-art i:nth-child(3){animation-duration:18s,5s;animation-delay:-6s,-2s}
+#pc-ov.pc-entry .pc-logo{animation:pc-logo-float 5s ease-in-out infinite}
+@media(min-width:761px){#pc-ov.gate.pc-entry{align-content:safe center;padding-top:40px;padding-bottom:40px}#pc-ov.gate .pc-card.pc-auth-card{max-height:none;overflow:visible}}
+@media(prefers-reduced-motion:reduce){#pc-ov.gate.pc-entry,#pc-ov.gate.pc-entry:before,#pc-ov.gate.pc-entry:after,#pc-ov.pc-entry .pc-auth-art i,#pc-ov.pc-entry .pc-logo{animation:none!important}}

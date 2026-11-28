@@ -65,7 +65,7 @@
         if (!user) { consentOK = false; window.PCPlan = null; window.PCAdmin = false; window.dispatchEvent(new Event('pcplan')); try { window.__pc.hReset(); } catch (e) {} }
         if (!user && ev === 'SIGNED_OUT') { lock(); accessSheet(); }
         paint();
-        if (user && user.id !== prev && ev !== 'TOKEN_REFRESHED') { checkConsent().then(function (ok) { if (ok) { paint(); reconcile(); syncPush(); setTimeout(offerPushOnce, 3000); } }); }
+        if (user && user.id !== prev && ev !== 'TOKEN_REFRESHED') { checkConsent().then(function (ok) { if (ok) { paint(); reconcile(); syncPush(); setTimeout(offerPushOnce, 3000); setTimeout(offerInstallOnce, 4500); } }); }
       });
       return sb;
     });
@@ -270,7 +270,7 @@
     markPushAsked('preguntado');
     return requestPushNow();
   }
-  window.__pcPushOnce = function () { return askPushOnce(); };
+  window.__pcPushOnce = function () { var p = askPushOnce(); p.then(function () { setTimeout(offerInstallOnce, 1500); }); return p; };
   // Cuentas que terminaron el tutorial antes de este cambio: una sola hoja, una sola vez por dispositivo.
   function offerPushOnce() {
     if (ov || document.getElementById('coach') || !canAskPush() || pushAsked()) return;
@@ -285,6 +285,129 @@
         o.querySelector('[data-no]').onclick = function () { markPushAsked('ahora-no'); close(); };
       });
   }
+  /* ---------- instalar como app (acceso directo): una sola oferta automatica por dispositivo; siempre disponible en Tu cuenta ---------- */
+  var INST_KEY = 'pc-instalar-ofrecido', instEvt = null;
+  window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); instEvt = e; });
+  window.addEventListener('appinstalled', function () { instEvt = null; markInst('instalado'); });
+  function instOffered() { try { return !!localStorage.getItem(INST_KEY); } catch (e) { return true; } }
+  function markInst(v) { try { localStorage.setItem(INST_KEY, v + '|' + new Date().toISOString()); } catch (e) {} }
+  function instKind() {
+    var ua = navigator.userAgent || '';
+    if (standalone) return 'ya';
+    if (/FBAN|FBAV|FB_IAB|Instagram|musical_ly|Bytedance|TikTok|Line\/|Twitter|Snapchat|GSA\//i.test(ua)) return 'inapp';
+    if (isIOS || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) {
+      var m = ua.match(/OS (\d+)_(\d+)/), v = m ? +m[1] + m[2] / 100 : 99;
+      if (/CriOS|FxiOS|EdgiOS/.test(ua)) return v >= 16.04 ? 'ios-otro' : 'ios-safari-req';
+      return 'ios-safari';
+    }
+    if (instEvt) return 'prompt';
+    if (/android/i.test(ua)) return 'android-menu';
+    return 'pc';
+  }
+  var SHARE_ICO = '<svg width="16" height="18" viewBox="0 0 16 20" aria-hidden="true" style="vertical-align:-3px"><path d="M8 1v12M4 5l4-4 4 4M3 9H1.5v9.5h13V9H13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  // Textos por idioma (los mismos 6 idiomas de la app). {S} = icono de Compartir.
+  var IT = {
+    es: { title: 'Ten Plata Clara en tu pantalla de inicio', why: 'Así la abres con un toque, como cualquier app.', whyIos: 'Así la abres con un toque, como cualquier app, y en iPhone es necesario para recibir notificaciones.',
+      safari: ['Toca el botón <b>Compartir</b> {S} en la barra de Safari. Si no lo ves, toca primero <b>···</b>.', 'Baja y elige <b>Agregar a pantalla de inicio</b>.', 'Toca <b>Agregar</b>. Luego abre Plata Clara desde el nuevo ícono.'],
+      otro: ['Toca el botón <b>Compartir</b> {S} junto a la barra de dirección (o en el menú <b>···</b>).', 'Elige <b>Agregar a pantalla de inicio</b>.', 'Toca <b>Agregar</b>. Si no aparece la opción, abre este enlace en <b>Safari</b> y repite los pasos.'],
+      req: 'En tu versión de iPhone el acceso directo solo se crea desde <b>Safari</b>. Copia el enlace, ábrelo en Safari y elige Compartir → <b>Agregar a pantalla de inicio</b>.',
+      inapp: 'Abriste el enlace dentro de otra app (Instagram, TikTok, Facebook…). Desde ahí no se puede crear el acceso directo.',
+      inappSteps: ['Toca <b>···</b> y elige <b>Abrir en el navegador</b> (Safari en iPhone, Chrome en Android).', 'O copia el enlace y pégalo en el navegador.', 'Ahí busca <b>Agregar a pantalla de inicio</b>.'],
+      amenu: ['Toca el menú <b>⋮</b> del navegador.', 'Elige <b>Instalar app</b> o <b>Agregar a pantalla principal</b>.', 'Confirma. Luego abre Plata Clara desde el nuevo ícono.'],
+      prompt: 'Tendrás Plata Clara como una app más: se abre en pantalla completa y funciona sin internet.', pc: 'Abre este enlace en tu celular para tener Plata Clara como app en tu pantalla de inicio.',
+      install: 'Instalar app', copy: 'Copiar enlace', copied: 'Enlace copiado. Pégalo en tu navegador.', copiedIos: 'Enlace copiado. Pégalo en Safari.', later: 'Ahora no', close: 'Cerrar', also: 'También lo encuentras luego en Tu cuenta.', account: 'Instalar en este dispositivo' },
+    en: { title: 'Put Plata Clara on your Home Screen', why: 'Open it with one tap, like any other app.', whyIos: 'Open it with one tap, like any other app. On iPhone, this is also required to get notifications.',
+      safari: ['Tap the <b>Share</b> button {S} in the Safari toolbar. If you don’t see it, tap <b>···</b> first.', 'Scroll down and choose <b>Add to Home Screen</b>.', 'Tap <b>Add</b>. Then open Plata Clara from the new icon.'],
+      otro: ['Tap the <b>Share</b> button {S} next to the address bar (or in the <b>···</b> menu).', 'Choose <b>Add to Home Screen</b>.', 'Tap <b>Add</b>. If the option isn’t there, open this link in <b>Safari</b> and repeat the steps.'],
+      req: 'On your iPhone version, shortcuts can only be added from <b>Safari</b>. Copy the link, open it in Safari and choose Share → <b>Add to Home Screen</b>.',
+      inapp: 'You opened the link inside another app (Instagram, TikTok, Facebook…). You can’t add a shortcut from there.',
+      inappSteps: ['Tap <b>···</b> and choose <b>Open in browser</b> (Safari on iPhone, Chrome on Android).', 'Or copy the link and paste it into your browser.', 'Then look for <b>Add to Home Screen</b>.'],
+      amenu: ['Tap the browser menu <b>⋮</b>.', 'Choose <b>Install app</b> or <b>Add to Home screen</b>.', 'Confirm. Then open Plata Clara from the new icon.'],
+      prompt: 'Plata Clara will work like any other app: it opens full screen and works offline.', pc: 'Open this link on your phone to add Plata Clara to your Home Screen.',
+      install: 'Install app', copy: 'Copy link', copied: 'Link copied. Paste it into your browser.', copiedIos: 'Link copied. Paste it into Safari.', later: 'Not now', close: 'Close', also: 'You can also find this later in Your account.', account: 'Install on this device' },
+    pt: { title: 'Tenha o Plata Clara na sua tela de início', why: 'Assim você abre com um toque, como qualquer app.', whyIos: 'Assim você abre com um toque, como qualquer app. No iPhone, isso também é necessário para receber notificações.',
+      safari: ['Toque no botão <b>Compartilhar</b> {S} na barra do Safari. Se não aparecer, toque primeiro em <b>···</b>.', 'Role para baixo e escolha <b>Adicionar à Tela de Início</b>.', 'Toque em <b>Adicionar</b>. Depois abra o Plata Clara pelo novo ícone.'],
+      otro: ['Toque no botão <b>Compartilhar</b> {S} ao lado da barra de endereço (ou no menu <b>···</b>).', 'Escolha <b>Adicionar à Tela de Início</b>.', 'Toque em <b>Adicionar</b>. Se a opção não aparecer, abra este link no <b>Safari</b> e repita os passos.'],
+      req: 'Na sua versão do iPhone, o atalho só pode ser criado pelo <b>Safari</b>. Copie o link, abra no Safari e escolha Compartilhar → <b>Adicionar à Tela de Início</b>.',
+      inapp: 'Você abriu o link dentro de outro app (Instagram, TikTok, Facebook…). Por lá não é possível criar o atalho.',
+      inappSteps: ['Toque em <b>···</b> e escolha <b>Abrir no navegador</b> (Safari no iPhone, Chrome no Android).', 'Ou copie o link e cole no navegador.', 'Lá, procure <b>Adicionar à Tela de Início</b>.'],
+      amenu: ['Toque no menu <b>⋮</b> do navegador.', 'Escolha <b>Instalar app</b> ou <b>Adicionar à tela inicial</b>.', 'Confirme. Depois abra o Plata Clara pelo novo ícone.'],
+      prompt: 'O Plata Clara vai funcionar como qualquer app: abre em tela cheia e funciona sem internet.', pc: 'Abra este link no seu celular para ter o Plata Clara na tela de início.',
+      install: 'Instalar app', copy: 'Copiar link', copied: 'Link copiado. Cole no seu navegador.', copiedIos: 'Link copiado. Cole no Safari.', later: 'Agora não', close: 'Fechar', also: 'Você também encontra isso depois em Sua conta.', account: 'Instalar neste dispositivo' },
+    fr: { title: 'Ajoute Plata Clara à ton écran d’accueil', why: 'Tu l’ouvres d’un geste, comme n’importe quelle app.', whyIos: 'Tu l’ouvres d’un geste, comme n’importe quelle app. Sur iPhone, c’est aussi nécessaire pour recevoir les notifications.',
+      safari: ['Touche le bouton <b>Partager</b> {S} dans la barre de Safari. Si tu ne le vois pas, touche d’abord <b>···</b>.', 'Fais défiler et choisis <b>Sur l’écran d’accueil</b>.', 'Touche <b>Ajouter</b>. Ouvre ensuite Plata Clara depuis la nouvelle icône.'],
+      otro: ['Touche le bouton <b>Partager</b> {S} à côté de la barre d’adresse (ou dans le menu <b>···</b>).', 'Choisis <b>Sur l’écran d’accueil</b>.', 'Touche <b>Ajouter</b>. Si l’option n’apparaît pas, ouvre ce lien dans <b>Safari</b> et recommence.'],
+      req: 'Sur ta version d’iPhone, le raccourci ne peut être créé que depuis <b>Safari</b>. Copie le lien, ouvre-le dans Safari et choisis Partager → <b>Sur l’écran d’accueil</b>.',
+      inapp: 'Tu as ouvert le lien dans une autre app (Instagram, TikTok, Facebook…). Impossible d’y créer le raccourci.',
+      inappSteps: ['Touche <b>···</b> et choisis <b>Ouvrir dans le navigateur</b> (Safari sur iPhone, Chrome sur Android).', 'Ou copie le lien et colle-le dans ton navigateur.', 'Cherche ensuite <b>Sur l’écran d’accueil</b>.'],
+      amenu: ['Touche le menu <b>⋮</b> du navigateur.', 'Choisis <b>Installer l’application</b> ou <b>Ajouter à l’écran d’accueil</b>.', 'Confirme. Ouvre ensuite Plata Clara depuis la nouvelle icône.'],
+      prompt: 'Plata Clara fonctionnera comme une app : plein écran et même sans internet.', pc: 'Ouvre ce lien sur ton téléphone pour ajouter Plata Clara à ton écran d’accueil.',
+      install: 'Installer l’app', copy: 'Copier le lien', copied: 'Lien copié. Colle-le dans ton navigateur.', copiedIos: 'Lien copié. Colle-le dans Safari.', later: 'Plus tard', close: 'Fermer', also: 'Tu le retrouveras aussi dans Ton compte.', account: 'Installer sur cet appareil' },
+    de: { title: 'Plata Clara auf deinen Home-Bildschirm', why: 'So öffnest du sie mit einem Tipp, wie jede andere App.', whyIos: 'So öffnest du sie mit einem Tipp, wie jede andere App. Auf dem iPhone ist das auch für Mitteilungen nötig.',
+      safari: ['Tippe in der Safari-Leiste auf <b>Teilen</b> {S}. Falls du es nicht siehst, tippe zuerst auf <b>···</b>.', 'Scrolle nach unten und wähle <b>Zum Home-Bildschirm</b>.', 'Tippe auf <b>Hinzufügen</b>. Öffne Plata Clara dann über das neue Symbol.'],
+      otro: ['Tippe neben der Adressleiste (oder im Menü <b>···</b>) auf <b>Teilen</b> {S}.', 'Wähle <b>Zum Home-Bildschirm</b>.', 'Tippe auf <b>Hinzufügen</b>. Fehlt die Option, öffne diesen Link in <b>Safari</b> und wiederhole die Schritte.'],
+      req: 'Auf deiner iPhone-Version geht das nur in <b>Safari</b>. Kopiere den Link, öffne ihn in Safari und wähle Teilen → <b>Zum Home-Bildschirm</b>.',
+      inapp: 'Du hast den Link in einer anderen App geöffnet (Instagram, TikTok, Facebook…). Dort lässt sich keine Verknüpfung anlegen.',
+      inappSteps: ['Tippe auf <b>···</b> und wähle <b>Im Browser öffnen</b> (Safari auf dem iPhone, Chrome auf Android).', 'Oder kopiere den Link und füge ihn im Browser ein.', 'Suche dort <b>Zum Home-Bildschirm</b>.'],
+      amenu: ['Tippe auf das Browsermenü <b>⋮</b>.', 'Wähle <b>App installieren</b> oder <b>Zum Startbildschirm hinzufügen</b>.', 'Bestätige. Öffne Plata Clara dann über das neue Symbol.'],
+      prompt: 'Plata Clara funktioniert dann wie jede App: im Vollbild und auch offline.', pc: 'Öffne diesen Link auf deinem Handy, um Plata Clara auf den Home-Bildschirm zu legen.',
+      install: 'App installieren', copy: 'Link kopieren', copied: 'Link kopiert. Füge ihn im Browser ein.', copiedIos: 'Link kopiert. Füge ihn in Safari ein.', later: 'Nicht jetzt', close: 'Schließen', also: 'Du findest das später auch unter Dein Konto.', account: 'Auf diesem Gerät installieren' },
+    it: { title: 'Metti Plata Clara nella schermata Home', why: 'Così la apri con un tocco, come qualsiasi app.', whyIos: 'Così la apri con un tocco, come qualsiasi app. Su iPhone serve anche per ricevere le notifiche.',
+      safari: ['Tocca il pulsante <b>Condividi</b> {S} nella barra di Safari. Se non lo vedi, tocca prima <b>···</b>.', 'Scorri e scegli <b>Aggiungi alla schermata Home</b>.', 'Tocca <b>Aggiungi</b>. Poi apri Plata Clara dalla nuova icona.'],
+      otro: ['Tocca il pulsante <b>Condividi</b> {S} accanto alla barra degli indirizzi (o nel menu <b>···</b>).', 'Scegli <b>Aggiungi alla schermata Home</b>.', 'Tocca <b>Aggiungi</b>. Se l’opzione non c’è, apri questo link in <b>Safari</b> e ripeti i passaggi.'],
+      req: 'Sulla tua versione di iPhone il collegamento si crea solo da <b>Safari</b>. Copia il link, aprilo in Safari e scegli Condividi → <b>Aggiungi alla schermata Home</b>.',
+      inapp: 'Hai aperto il link dentro un’altra app (Instagram, TikTok, Facebook…). Da lì non si può creare il collegamento.',
+      inappSteps: ['Tocca <b>···</b> e scegli <b>Apri nel browser</b> (Safari su iPhone, Chrome su Android).', 'Oppure copia il link e incollalo nel browser.', 'Lì cerca <b>Aggiungi alla schermata Home</b>.'],
+      amenu: ['Tocca il menu <b>⋮</b> del browser.', 'Scegli <b>Installa app</b> o <b>Aggiungi a schermata Home</b>.', 'Conferma. Poi apri Plata Clara dalla nuova icona.'],
+      prompt: 'Plata Clara funzionerà come un’app: a schermo intero e anche senza internet.', pc: 'Apri questo link sul telefono per avere Plata Clara nella schermata Home.',
+      install: 'Installa app', copy: 'Copia link', copied: 'Link copiato. Incollalo nel browser.', copiedIos: 'Link copiato. Incollalo in Safari.', later: 'Non ora', close: 'Chiudi', also: 'Lo trovi anche più tardi in Il tuo account.', account: 'Installa su questo dispositivo' }
+  };
+  function IL(k) { var l = (document.documentElement.lang || 'es').slice(0, 2); var d = IT[l] || IT.es; return d[k] != null ? d[k] : IT.es[k]; }
+  function instSteps(k) {
+    var li = function (a) { return '<ol style="margin:0 0 6px;padding-left:22px;line-height:1.6;font-size:15px">' + a.map(function (x) { return '<li style="margin:4px 0">' + x.replace('{S}', SHARE_ICO) + '</li>'; }).join('') + '</ol>'; };
+    if (k === 'ios-safari') return li(IL('safari'));
+    if (k === 'ios-otro') return li(IL('otro'));
+    if (k === 'ios-safari-req') return '<p>' + IL('req') + '</p>';
+    if (k === 'inapp') return '<p>' + IL('inapp') + '</p>' + li(IL('inappSteps'));
+    if (k === 'android-menu') return li(IL('amenu'));
+    if (k === 'prompt') return '<p>' + IL('prompt') + '</p>';
+    return '<p>' + IL('pc') + '</p>';
+  }
+  function installSheet(auto) {
+    var k = instKind();
+    if (k === 'ya') return;
+    var copy = k === 'inapp' || k === 'ios-safari-req' || k === 'pc';
+    show('<h2>' + IL('title') + '</h2>' +
+      (k === 'prompt' ? '' : '<p>' + IL(isIOS ? 'whyIos' : 'why') + '</p>') +
+      instSteps(k) +
+      (k === 'prompt' ? '<button class="pc-b" data-in>' + IL('install') + '</button>' : '') +
+      (copy ? '<button class="pc-b" data-cp>' + IL('copy') + '</button><div class="pc-m" data-cm style="min-height:0"></div>' : '') +
+      '<button class="pc-b alt" data-x>' + IL(auto ? 'later' : 'close') + '</button>' +
+      (auto ? '<div class="pc-m" style="min-height:0;font-size:13px">' + IL('also') + '</div>' : ''), function (o) {
+        var bi = o.querySelector('[data-in]'), bc = o.querySelector('[data-cp]');
+        if (bi) bi.onclick = function () {
+          var e = instEvt; if (!e) { close(); return; }
+          instEvt = null; e.prompt();
+          (e.userChoice || Promise.resolve({})).then(function (r) { markInst(r && r.outcome === 'accepted' ? 'instalado' : 'rechazado'); close(); });
+        };
+        if (bc) bc.onclick = function () {
+          var url = location.origin + location.pathname, m = o.querySelector('[data-cm]');
+          var ok = function () { if (m) { m.className = 'pc-m o'; m.textContent = IL(isIOS ? 'copiedIos' : 'copied'); } };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(ok, function () { if (m) m.textContent = url; });
+          else if (m) m.textContent = url;
+        };
+        o.querySelector('[data-x]').onclick = function () { if (auto) markInst('ahora-no'); close(); };
+      });
+  }
+  function offerInstallOnce() {
+    if (ov || document.getElementById('coach') || document.querySelector('dialog[open]') || !user || instOffered()) return;
+    var k = instKind(); if (k === 'ya' || k === 'pc') return;
+    var S0 = window.__pc && window.__pc.get && window.__pc.get();
+    if (!S0 || !S0.tour) return;
+    markInst('ofrecido');
+    installSheet(true);
+  }
+  window.__pcInstall = function () { installSheet(false); };
   // Pasos para activarlas a mano (la web no puede abrir los ajustes del telefono directamente).
   function pasosAjustes() {
     if (/android/i.test(navigator.userAgent)) return standalone
@@ -669,6 +792,7 @@
         '<div class="pc-m ' + (status === 'error' || status === 'conflict' ? 'e' : 'o') + '">' + label + '</div>' +
         '<button class="pc-b alt" data-s>Sincronizar ahora</button>' +
         pushBlock(sub) +
+        (standalone ? '' : '<button class="pc-b alt" data-inst>' + IL('account') + '</button>') +
         '<button class="pc-b alt" data-o>Cerrar sesión</button>' +
         '<button class="pc-b alt" data-x>Cerrar</button>' +
         '<button class="pc-l" data-del style="color:#BE4129">Eliminar mi cuenta</button>' +
@@ -687,6 +811,7 @@
               .then(function () { wipeLocal(); }, function () {});
           };
           o.querySelector('[data-x]').onclick = close;
+          var bInst = o.querySelector('[data-inst]'); if (bInst) bInst.onclick = function () { installSheet(false); };
           o.querySelector('[data-del]').onclick = function () {
             if (!confirm('¿Eliminar tu cuenta? Se borrarán para siempre tus datos (movimientos, deudas, metas y billeteras). Esto no se puede deshacer.')) return;
             if (!confirm('Última confirmación: ¿seguro que quieres eliminar tu cuenta y todos tus datos?')) return;
