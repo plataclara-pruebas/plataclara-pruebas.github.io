@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta name="pc-version" content="20261128-version-v39">
+<meta name="pc-version" content="20261128-cobros-v41">
 <meta charset="utf-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://sqfobtlxvddmijafttog.supabase.co https://open.er-api.com; object-src 'none'; base-uri 'self'; form-action 'self'; worker-src 'self'; manifest-src 'self'">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -1497,6 +1497,7 @@ function sheetHTML(){
       +'<label class="f"><span>'+t('Monto ({c})',{c:esc(curSym(oo.cc))})+'</span><input name="amount" inputmode="decimal" required value="'+oLeft(oo)+'"></label>'
       +'<label class="f"><span>'+t('Fecha')+'</span><input type="date" name="date" required value="'+iso(new Date())+'"></label>'
       +walletSelCc(oo.cc).replace('<label class="f">','<label class="f full">')+'</div>'
+      +'<label class="f"><span>¿Ya anotaste este ingreso?</span><select name="existingMove"><option value="">Registrar un ingreso nuevo</option>'+S.moves.filter(function(m){return m.type==='Ingreso'&&!m.oid&&mc(m)===mc(oo)&&m.amount>0&&m.amount<=oLeft(oo)+0.001;}).map(function(m){return '<option value="'+esc(m.id)+'">'+esc(m.date+' · '+m.desc+' · '+money(m.amount,mc(m)))+'</option>';}).join('')+'</select></label><p class="note">Si eliges un ingreso existente, solo se vincula a esta deuda. Tu saldo no cambia.</p>'
       +'<div class="foot"><button class="btn grow" type="submit">'+t('Guardar')+'</button><button class="btn alt" type="button" data-a="close">'+t('Cancelar')+'</button></div></form>';
   }else if(s.kind==='hogar'){
     h=hogarHTML();
@@ -1938,12 +1939,18 @@ document.addEventListener('submit',function(e){
     if((d.type==='Deuda'||d.type==='Gasto')&&d.origin==='ahorro'){rec.prior=true;rec.fromSav=true;}
     if(d.type==='Deuda'&&d.debtId)rec.debtId=d.debtId;
     var prevM=s.id?S.moves.filter(function(m){return m.id===s.id;})[0]:null;
+    if(prevM&&prevM.oid&&rec.type==='Ingreso'){
+      var linkedOwed=(S.owed||[]).filter(function(o){return o.id===prevM.oid;})[0];
+      if(linkedOwed&&rec.amount>oLeft(linkedOwed)+prevM.amount+0.001){toast(t('El monto no puede ser mayor a lo que falta.'));return;}
+      rec.oid=prevM.oid;
+    }
     if(d.origin===undefined&&prevM&&prevM.type===rec.type){if(prevM.prior)rec.prior=true;if(prevM.fromSav)rec.fromSav=true;}   /* sin selector: no se pierde el origen guardado */
     stampFx(rec,d.cc,prevM);
     var lk=rec.goalId?S.goals.filter(function(x){return x.id===rec.goalId;})[0]:rec.debtId?S.debts.filter(function(x){return x.id===rec.debtId;})[0]:null;
     if(lk)rec.cc=mc(lk);   /* los aportes y pagos usan la moneda de su meta o deuda */
     var wsel=(d.wallet?walletOf(d.wallet):null)||mainWallet(rec.cc||S.cc);
     if(wsel){if(lk&&mc(lk)!==wsel.cc){toast(t('La billetera y la meta o deuda deben usar la misma moneda.'));return;}rec.cc=wsel.cc;rec.w=wsel.id;}
+    if(rec.oid&&mc(rec)!==mc(prevM)){toast('El cobro debe conservar su moneda.');return;}
     /* "De mis ahorros" solo usa el ahorro general (sin meta) de esa moneda. Nunca se descuenta una meta automáticamente. */
     if(rec.fromSav){var cG=mc(rec),disp=S.moves.reduce(function(a,m){if(m.id===rec.id||mc(m)!==cG)return a;if(m.type==='Ahorro'&&!m.goalId)return a+m.amount;if(m.fromSav)return a-m.amount;return a;},0);
       if(Math.round(rec.amount*100)>Math.round(disp*100)){savErr(f,true);return;}}
@@ -1992,6 +1999,11 @@ document.addEventListener('submit',function(e){
     ui.view='deudas';ui.dtab='owed';msg=t('Listo');
   }else if(k==='owedpay'){
     var po=(S.owed||[]).filter(function(x){return x.id===s.id;})[0],pa=Math.round(num(d.amount)*100)/100;
+    if(d.existingMove){
+      var existing=S.moves.filter(function(m){return m.id===d.existingMove;})[0];
+      if(!po||!existing||existing.type!=='Ingreso'||existing.oid||mc(existing)!==mc(po)||!(existing.amount>0)||existing.amount>oLeft(po)+0.001){toast('Ese ingreso no se puede vincular a esta deuda.');return;}
+      existing.oid=po.id;save();ui.sheet=null;render();toast('Cobro vinculado. Tu saldo no cambió.');return;
+    }
     if(!po||pa<=0){toast(t('Escribe un monto mayor que cero'));return;}
     if(pa>oLeft(po)+0.001){toast(t('El monto no puede ser mayor a lo que falta.'));return;}
     var pw=walletOf(d.wallet)||mainWallet(po.cc);
